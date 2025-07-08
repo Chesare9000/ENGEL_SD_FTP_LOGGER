@@ -1,0 +1,4 @@
+
+NOTE : The board for the platformio project must be located on: 
+
+(Ubuntu) /.platformio/platforms/espressif32/boards/(paste here)

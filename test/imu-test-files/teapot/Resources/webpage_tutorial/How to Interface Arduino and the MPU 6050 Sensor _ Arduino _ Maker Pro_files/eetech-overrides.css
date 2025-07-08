@@ -1,0 +1,594 @@
+.pf-widget-modal {
+       z-index: 999999;
+}
+
+/** Full Image 550x375 TEMPLATE (use class eetech-fullimg) **/
+.eetech-fullimg.pf-widget {
+    background-color: rgba(0,0,0,0);
+}
+.eetech-fullimg.pf-widget-modal .pf-widget-content, .eetech-fullimg.pf-widget-slideout {
+    width: 550px;
+    max-width: 550px;
+    height: 375px;
+    overflow-y: hidden;
+    padding:0 !important;
+    box-shadow: 0 0px 2px 3px rgb(0 0 0 / 33%);
+}
+.eetech-fullimg.pf-widget-modal .pf-widget-img, .eetech-fullimg.pf-widget-slideout.pf-widget-variant-2 .pf-widget-img {
+    border-radius:0;
+    width:550px;
+    height:375px;
+    left:0;
+    margin-left:0;
+    top:0;
+    z-index:-9999;
+}
+.eetech-fullimg.pf-widget-modal.pf-widget-variant-2 .pf-widget-img {
+    float: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    margin-left: 0;
+    width: 550px;
+    height: 375px;
+}
+
+.eetech-fullimg .branding,
+.eetech-fullimg .pf-widget-cancel {
+    display: none
+}
+.eetech-fullimg.pf-widget .pf-widget-message {
+    display:none;
+}
+.eetech-fullimg.pf-widget .pf-widget-close {
+	top: 0px !important;
+    margin-right: 6px !important;
+    color: #292929;
+    /*text-shadow: 2px 2px #000;*/
+    background: white;
+    border-radius: 30px!important;
+    line-height: 0!important;
+    padding: 10px 4px!important;
+    font-size: 18px!important;
+}
+.eetech-fullimg.pf-widget .pf-widget-headline {
+	display:none;
+}
+.eetech-fullimg.pf-widget .pf-widget-btn.pf-widget-ok {
+    width:500px !important;
+    height:340px !important;
+    display:block;
+    text-indent:-6000px !important;
+    overflow: hidden;
+    background:transparent;
+    box-shadow: 0 1px 1px rgba(0,0,0,0);
+}
+.eetech-fullimg.pf-widget-slideout.opened.pf-position-bottom-right, .eetech-fullimg.pf-widget-slideout.opened.pf-position-right, .eetech-fullimg.pf-widget-slideout.opened.pf-position-top-right {
+    right: 10px !important;
+    bottom: 10px !important;
+}
+/* Small Devices, Tablets */
+@media only screen and (max-width: 600px) and (orientation: portrait) {
+	.eetech-fullimg.pf-widget-modal .pf-widget-content, .eetech-fullimg.pf-widget-slideout {
+    width: 470px;
+    max-width: 470px;
+    height: 320px;
+}
+.eetech-fullimg.pf-widget-modal .pf-widget-img {
+    width:470px;
+    height:320px;
+}
+.eetech-fullimg.pf-widget-modal .pf-widget-img, .eetech-fullimg.pf-widget-slideout.pf-widget-variant-2 .pf-widget-img {
+    width: 470px;
+    height: 320px;
+}
+.eetech-fullimg.pf-widget .pf-widget-btn.pf-widget-ok {
+    width:470px !important;
+    height:320px !important;
+}
+}
+
+/* Extra Small Devices, Phones */
+
+@media only screen and (max-width: 480px) and (orientation: portrait) {
+	.eetech-fullimg.pf-widget-modal .pf-widget-content, .eetech-fullimg.pf-widget-slideout {
+    width: 320px;
+    max-width: 320px;
+    height: 218px;
+}
+.eetech-fullimg.pf-widget-modal .pf-widget-img {
+    width:320px;
+    height:218px;
+}
+.eetech-fullimg.pf-widget-modal .pf-widget-img, .eetech-fullimg.pf-widget-slideout.pf-widget-variant-2 .pf-widget-img {
+    width: 320px;
+    height: 218px;
+}
+.eetech-fullimg.pf-widget .pf-widget-btn.pf-widget-ok {
+    width:300px !important;
+    height:200px !important;
+}
+}
+
+/* Custom, iPhone Retina */
+
+@media only screen and (max-width: 320px) and (orientation: portrait) {
+}
+
+/** eetech-classic Modal | Form with Header, body and top Image **/
+.pf-widget.eetech-classic {
+  border-radius: 0px;
+  box-shadow: 1px 0px 9px 1px rgb(0 0 0 / 32%);
+  font-family: "Inter", Arial,sans-serif;
+}
+.pf-widget-modal.eetech-classic .pf-widget-content{
+    background-color: #fff!important;
+    max-width: 460px !important;
+    border-radius: 0!important;
+}
+.pf-widget-slideout.eetech-classic  {
+    width: 400px !important;
+    background-color: white;
+}
+/* message paragraph */
+.pf-widget.eetech-classic .pf-widget-message {
+  font-size: 17px;
+  line-height: 1.4;
+  color: #888;
+  font-family: "Inter", Arial,sans-serif;
+}
+
+/* headline */
+.pf-widget.eetech-classic .pf-widget-headline {
+    color: black;
+    font-size: 24px;
+    letter-spacing: .5px;
+    font-weight: 300;
+    font-family: "Inter", Arial,sans-serif;
+    line-height: 1.2;
+}
+
+.pf-widget-modal.pf-widget-variant-2.eetech-classic .pf-widget-headline {
+    margin-top: 110px;
+}
+
+/* IMAGE */
+.pf-widget.eetech-classic .pf-widget-img {
+    top: 0 !important;
+    left: 0 !important;
+    margin: auto !important;
+    width: 100% !important;
+    height: 135px !important;
+    border-radius: 0 !important;
+    margin-left: 0 !important;
+    object-fit: cover;
+}
+/* "x" button */
+.pf-widget.eetech-classic .pf-widget-close {
+color: black;
+    z-index: 10;
+    background: #f4f4f4;
+    padding: 3px 2px 3px 2px;
+    line-height: 10pt;
+}
+
+/* buttons */
+.pf-widget.eetech-classic .pf-widget-btn {
+  border-radius: 0px;
+  padding: 1px 25px;
+}
+
+/* form */
+
+.pf-widget.eetech-classic input[type=email], .pf-widget.eetech-classic input[type=text], .pf-widget.eetech-classic select, .pf-widget.eetech-classic textarea{
+    border: 1px solid #9b9b9b;
+    border-radius: 0!important;
+    font-family: "Inter", Arial,sans-serif;
+    font-size: 16px!important;
+    margin-bottom: 0;
+    padding: 5px 5px;
+        
+}
+input:-internal-autofill-selected {
+    background-color: white !important;
+}
+.pf-form.eetech-classic .pf-widget-checkbox {
+
+}
+
+/* confirm button */
+.pf-widget.eetech-classic .pf-widget-btn.pf-widget-ok {
+    border: 1px solid #0891B2;
+    border-radius: 70!important;
+    background: #000!important;
+    color: white;
+        font-family: "Inter", Arial,sans-serif;
+    font-size: 16px!important;
+    font-weight: 600!important;
+    position: relative!important;
+    overflow: hidden!important;
+    display: inline-block;
+    letter-spacing: 1pt;
+    height: 45px;
+}
+
+/* cancel button */
+.pf-widget.eetech-classic .pf-widget-btn.pf-widget-cancel {
+display:none
+}
+
+/* img */
+.pf-widget.eetech-classic .pf-widget-img {
+  border-radius: 0px;
+}
+
+.pf-widget.eetech-classic .pf-widget-footer {
+  font-size: 12px;
+}
+/* Small Devices, Tablets */
+@media only screen and (max-width: 550px) and (orientation: portrait) {
+.pf-widget-modal.eetech-classic .pf-widget-content{
+    max-width: 350px !important;
+}
+   .pf-widget.eetech-classic input[type=email], .pf-widget.eetech-classic input[type=text], .pf-widget.eetech-classic select, .pf-widget.eetech-classic textarea {
+    width: 300px;
+} 
+    
+}
+
+/** news-classic Modal | Checkbox hidden | Form with Header, body and top Image **/
+.pf-widget.news-classic {
+  border-radius: 0px;
+  box-shadow: 1px 0px 9px 1px rgb(0 0 0 / 32%);
+  font-family: "Inter", Arial,sans-serif;
+}
+.pf-widget-modal.news-classic .pf-widget-content{
+    background-color: #fff!important;
+    max-width: 460px !important;
+    border-radius: 0!important;
+}
+.pf-widget-slideout.news-classic  {
+    width: 400px !important;
+    background-color: white;
+}
+/* message paragraph */
+.pf-widget.news-classic .pf-widget-message {
+  font-size: 17px;
+  line-height: 1.4;
+  color: #888;
+  font-family: "Inter", Arial,sans-serif;
+}
+
+/* headline */
+.pf-widget.news-classic .pf-widget-headline {
+    color: black;
+    font-size: 24px;
+    letter-spacing: .5px;
+    font-weight: 300;
+    font-family: "Inter", Arial,sans-serif;
+    line-height: 1.2;
+}
+
+.pf-widget-modal.pf-widget-variant-2.news-classic .pf-widget-headline {
+    margin-top: 110px;
+}
+
+/* IMAGE */
+.pf-widget.news-classic .pf-widget-img {
+    top: 0 !important;
+    left: 0 !important;
+    margin: auto !important;
+    width: 100% !important;
+    height: 135px !important;
+    border-radius: 0 !important;
+    margin-left: 0 !important;
+    object-fit: cover;
+}
+/* "x" button */
+.pf-widget.news-classic .pf-widget-close {
+color: black;
+    z-index: 10;
+    background: #f4f4f4;
+    padding: 3px 2px 3px 2px;
+    line-height: 10pt;
+}
+
+/* buttons */
+.pf-widget.news-classic .pf-widget-btn {
+  border-radius: 0px;
+  padding: 1px 25px;
+}
+
+/* form */
+
+.pf-widget.news-classic input[type=email], .pf-widget.news-classic input[type=text], .pf-widget.news-classic select, .pf-widget.news-classic textarea{
+    border: 1px solid #9b9b9b;
+    border-radius: 0!important;
+    font-family: "Inter", Arial,sans-serif;
+    font-size: 16px!important;
+    margin-bottom: 0;
+    padding: 5px 5px;
+        
+}
+input:-internal-autofill-selected {
+    background-color: white !important;
+}
+.pf-form.news-classic .pf-widget-checkbox {
+    display: none;
+    padding: 0px;
+}
+
+/* confirm button */
+.pf-widget.news-classic .pf-widget-btn.pf-widget-ok {
+    border: 1px solid #0891B2;
+    border-radius: 70!important;
+    background: #000!important;
+    color: white;
+        font-family: "Inter", Arial,sans-serif;
+    font-size: 16px!important;
+    font-weight: 600!important;
+    position: relative!important;
+    overflow: hidden!important;
+    display: inline-block;
+    letter-spacing: 1pt;
+    height: 45px;
+}
+
+/* cancel button */
+.pf-widget.news-classic .pf-widget-btn.pf-widget-cancel {
+display:none
+}
+
+/* img */
+.pf-widget.news-classic .pf-widget-img {
+  border-radius: 0px;
+}
+
+.pf-widget.news-classic .pf-widget-footer {
+  font-size: 12px;
+}
+/* Small Devices, Tablets */
+@media only screen and (max-width: 550px) and (orientation: portrait) {
+.pf-widget-modal.news-classic .pf-widget-content{
+    max-width: 350px !important;
+}
+   .pf-widget.news-classic input[type=email], .pf-widget.news-classic input[type=text], .pf-widget.news-classic select, .pf-widget.news-classic textarea {
+    width: 300px;
+} 
+    
+}
+
+/** eetech-split Modal | Form with Header, body and Left Image **/
+
+.eetech-split .span-color {
+       display:inline-block;
+    width:75px;
+    height:43px;
+    background-size:contain;
+    text-indent:-75px;
+    overflow:hidden;
+}
+
+.eetech-split .span-color-2 {
+      display:inline-block;
+    width:60px;
+    height:30px;
+    background-size:contain;
+    text-indent:-60px;
+    overflow:hidden;
+    vertical-align:4px;
+}
+
+.eetech-split .span-highlights {
+    display:inline-block;
+    vertical-align:10px;
+    padding-left:2px;
+    padding-right:3px;
+    color:#000;}
+
+.eetech-split .pf-va-middle img, .eetech-split .pf-widget-body img {
+    background: #ebebeb !important;
+    padding: 0 !important;
+    width: 329px !important;
+    height: 100% !important;
+    left: 0 !important;
+    margin-left: 0 !important;
+    border-radius: 0 !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    object-fit: cover;
+}
+.eetech-split.pf-widget-slideout.pf-widget-variant-2 .pf-widget-img {    
+    background: #ebebeb !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: 200px !important;
+    left: 0 !important;
+    margin-left: 0 !important;
+    border-radius: 0 !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    object-fit: cover;
+}
+.eetech-split.pf-widget-modal .pf-widget-content, .eetech-split.pf-widget-slideout {
+    max-width: 658px;
+    min-height: 300px;
+    height: auto;
+    overflow-y: hidden;
+    box-shadow: 5px 5px 10px #000;
+    padding:0;
+    background-color:#f4f4f4;
+}
+.eetech-split h2.pf-widget-headline {
+	width:329px !important;
+	float:right !important;	
+	margin-top: 30px  !important;
+	font-weight:300 !important;
+	font-size:22px !important;
+	text-align: center !important;
+	padding-left:25px !important;
+	color: black !important;
+	padding-right:15px !important;
+    line-height: 1em !important;
+    letter-spacing: .5px;
+    font-family: "Inter", Arial,sans-serif;
+        }
+.eetech-split.pf-widget .pf-widget-message, .eetech-split.pf-widget-slideout .pf-widget-message {
+    width: 100% !important;
+	padding-left:25px !important;
+	font-size:14px !important;
+	line-height:1.3em !important;
+	color: #888 !important;
+	padding-right:15px !important;
+	margin-bottom: 10px !important;
+    padding-top: 1em;
+    padding-bottom: .4em;
+    font-family: "Inter", Arial,sans-serif;
+    text-align: left;
+}
+.eetech-split.pf-widget-slideout h2.pf-widget-headline {
+    margin-top: 195px !important;
+    float: none !important;
+    margin-bottom: 0 !important;
+    padding-top: 10px !important;
+    padding-bottom: 6px;
+    width:100% !important;
+}
+.eetech-split .pf-va-middle, .eetech-split.pf-widget-slideout .pf-widget-content {
+	width:329px;
+	float:right;
+	text-align:center;
+}
+.eetech-split.pf-widget-slideout .pf-widget-content {
+	width:354px;
+	float:right;
+	text-align:left;
+}
+.eetech-split.pf-widget .pf-widget-close{
+        
+}
+.eetech-split.pf-widget .pf-widget-btn.pf-widget-ok, .eetech-split.pf-widget-slideout .pf-widget-btn.pf-widget-ok {
+    border: 1px solid #0891B2;
+    border-radius: 70!important;
+    background: #000!important;
+    color: white;
+        font-family: "Inter", Arial,sans-serif;
+    font-size: 16px!important;
+    font-weight: 600!important;
+    position: relative!important;
+    overflow: hidden!important;
+    display: inline-block;
+    letter-spacing: 1pt;
+    height: 45px;
+}
+.pf-widget.eetech-split .pf-widget-btn.pf-widget-cancel{
+    display: none;
+}
+
+.eetech-split.pf-widget input[type=email], .eetech-split.pf-widget form select, .eetech-split.pf-widget input[type=text] {
+    width:86% !important;
+    max-width:86% !important;
+    border:0 !important;
+    margin-left: 25px !important;
+    margin-top:0 !important;
+    height:38px !important;
+    padding:0 15px !important;
+    font-family: "Inter", Arial,sans-serif;
+    color: #888;
+}
+.eetech-split.pf-widget label{
+    /*width: 100% !important;*/
+	padding-left:25px !important;
+	font-size:.9em !important;
+	line-height:1.3em !important;
+	color: #888 !important;
+	padding-right:15px !important;
+	margin-bottom: 10px !important;
+    font-weight: 500;
+    font-family: "Inter", Arial,sans-serif;
+}
+
+.eetech-split.pf-widget .pf-required-flag {
+    display:none !important;
+}
+
+/* Small Devices, Tablets */
+@media only screen and (max-width: 768px) and (orientation: portrait) {
+.eetech-split.pf-widget-slideout.pf-form{
+    max-width: 329px;
+    }
+.eetech-split.pf-widget-modal .pf-widget-content, .eetech-split.pf-widget-slideout{
+    overflow-y: auto;max-width: 329px;
+    }
+.eetech-split.pf-widget-modal .pf-widget-content, .eetech-split.pf-widget-slideout .pf-widget-content{    
+    width: 329px;    
+    height: auto;
+    min-height: 420px;
+  }
+.eetech-split.pf-va-middle img,.eetech-split.pf-widget-slideout.pf-widget-variant-2 .pf-widget-img {    
+	overflow:hidden;
+	z-index:-1;
+	padding: 24px 65px 24px 65px !important;
+	height:205px !important;
+    object-position: top;
+    object-fit: cover;
+}
+ .eetech-split .pf-va-middle img, .eetech-split .pf-widget-body img {
+    background: #ebebeb !important;
+    padding: 0 !important;
+    width: 329px !important;
+    height: 180px !important;
+    left: 0 !important;
+    margin-left: 0 !important;
+    border-radius: 0 !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    object-fit: cover;
+}
+.eetech-split.pf-widget-slideout.pf-widget-variant-2 .pf-widget-img {    
+    background: #ebebeb !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: 200px !important;
+    left: 0 !important;
+    margin-left: 0 !important;
+    border-radius: 0 !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    object-fit: cover;
+}
+.eetech-split h2.pf-widget-headline, .eetech-split.pf-widget-slideout h2.pf-widget-headline {
+	float:none !important;	
+	margin-top:195px !important;
+	margin-bottom:0 !important;
+	padding-top:10px !important;
+	padding-bottom: 6px;
+	line-height:1.3em;
+    }
+.eetech-split.pf-widget .pf-widget-message, .eetech-split.pf-widget-slideout .pf-widget-message {
+	margin-bottom:20px;
+}
+.eetech-split.pf-widget .pf-widget-close {
+	color: black;
+    z-index: 10;
+    background: #f4f4f4;
+    padding: 3px 2px 3px 2px;
+    line-height: 10pt;
+	}
+.eetech-split.pf-widget .pf-widget-btn.pf-widget-ok, eetech-split.pf-widget-slideout .pf-widget-btn.pf-widget-ok {
+	padding:0px 26px !important;
+	margin-top:0 !important;
+}
+.eetech-split.pf-widget input[type=email], .eetech-split.pf-widget form select, .eetech-split.pf-widget input[type=text] {height:35px !important;padding:2px 15px !important;}
+
+}
+
+/* Extra Small Devices, Phones */
+
+@media only screen and (max-width: 480px) and (orientation: portrait) {
+}
+
+/* Custom, iPhone Retina */
+
+@media only screen and (max-width: 320px) and (orientation: portrait) {
+}

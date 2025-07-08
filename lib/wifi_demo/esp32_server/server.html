@@ -1,0 +1,180 @@
+<!--USE https://www.textfixer.com/html/compress-html-compression.php-->
+
+<!--REMEMBER! NO COMMENTS-->
+
+
+
+<!DOCTYPE html>
+<html>
+<head>
+<title>Page Title</title>
+</head>
+<body style='background-color: #EEEEEE;'>
+
+<span style='color: #003366;'>
+
+<h1>ENGEL WIFI TEST</h1>
+
+<form>
+  <p>ALARM STATUS</p>
+  <div>
+  
+    <input type='radio' id='alarm_on'
+           name='operation_mode'>
+    <label for='alarm_on'>ON</label>
+    
+    <input type='radio' id='alarm_off'
+           name='operation_mode'>
+    <label for='alarm_off'>OFF</label>
+  
+  </div>
+</form>
+
+<form>
+  <p>LED Color:</p>
+  <div>
+    <input type='radio' id='led_red'
+           name='operation_mode'>
+    <label for='led_red'>RED</label>
+
+    <input type='radio' id='led_green'
+           name='operation_mode'>
+    <label for='led_green'>GREEN</label>
+
+    <input type='radio' id='led_blue'
+           name='operation_mode'>
+    <label for='led_blue'>BLUE</label>
+
+  </div>
+</form>
+
+<br>Set RGB PWM: <br>
+<input type='range' min='0' max='255' value='0' class='slider' id='id_wifi_rgb_pwm'>
+Value: <span id='id_wifi_rgb_pwm_value'>-</span><br>
+
+</span>
+
+</body>
+<script>
+
+document.getElementById('led_red').addEventListener('click', led_changed);
+document.getElementById('led_green').addEventListener('click', led_changed);
+document.getElementById('led_blue').addEventListener('click', led_changed);
+
+document.getElementById('alarm_on').addEventListener('click', alarm_changed);
+document.getElementById('alarm_off').addEventListener('click', alarm_changed);
+
+var slider = document.getElementById('id_wifi_rgb_pwm'); 
+slider.addEventListener('change', slider_changed);
+
+var output = document.getElementById('id_wifi_rgb_pwm_value');
+
+
+var Socket;
+
+function init() 
+{
+  Socket = new WebSocket('ws://' + window.location.hostname + ':81/');
+  Socket.onmessage = function(event) 
+  {
+    processCommand(event);
+  };
+}
+
+function led_changed() 
+{
+  var wifi_rgb_led_selected = 0;
+
+  if(document.getElementById('led_green').checked == true) 
+  {
+    wifi_rgb_led_selected = 1;
+  } 
+  else if(document.getElementById('led_blue').checked == true) 
+  {
+    wifi_rgb_led_selected = 2;
+  }
+
+  console.log(wifi_rgb_led_selected);
+
+  var msg = { type: 'wifi_rgb_led', value: wifi_rgb_led_selected};
+  Socket.send(JSON.stringify(msg)); 
+}
+
+function alarm_changed() 
+{
+
+  var wifi_alarm_status = 0;
+
+  if(document.getElementById('alarm_on').checked == true) 
+  {
+    wifi_alarm_status = 1;
+  }
+
+  console.log(wifi_alarm_status);
+  var msg = { type: 'wifi_alarm_status', value: wifi_alarm_status};
+  Socket.send(JSON.stringify(msg)); 
+}
+
+function slider_changed() 
+{
+  var wifi_rgb_pwm = slider.value;
+  console.log(wifi_rgb_pwm);
+  var msg = { type: 'wifi_rgb_pwm', value: wifi_rgb_pwm};
+  Socket.send(JSON.stringify(msg)); 
+}
+
+
+function processCommand(event) 
+{
+  var obj = JSON.parse(event.data);
+  var type = obj.type;
+
+  if (type.localeCompare(\"wifi_rgb_pwm\") == 0) 
+  { 
+    var wifi_rgb_pwm = parseInt(obj.value); 
+    console.log(wifi_rgb_pwm); 
+    slider.value = wifi_rgb_pwm; 
+    output.innerHTML = wifi_rgb_pwm;
+  }
+
+  else if(type.localeCompare(\"wifi_rgb_led\") == 0) 
+  { 
+    var wifi_rgb_led_selected = parseInt(obj.value); 
+    console.log(wifi_rgb_led_selected); 
+
+    if(wifi_rgb_led_selected == 0) 
+    { 
+      document.getElementById('led_red').checked = true; 
+    } 
+    else if (wifi_rgb_led_selected == 1) 
+    { 
+      document.getElementById('led_green').checked = true; 
+    } 
+    else if (wifi_rgb_led_selected == 2) 
+    { 
+      document.getElementById('led_blue').checked = true; 
+    }
+  } 
+
+
+  else if(type.localeCompare(\"wifi_alarm_status\") == 0) 
+  { 
+    var wifi_alarm_status = parseInt(obj.value); 
+    console.log(wifi_alarm_status); 
+
+    if(wifi_alarm_status == 0) 
+    { 
+      document.getElementById('alarm_off').checked = true; 
+    } 
+    else if (wifi_alarm_status == 1) 
+    { 
+      document.getElementById('alarm_on').checked = true; 
+    } 
+  } 
+}
+window.onload = function(event) 
+{
+  init();
+}
+</script>
+</html>
