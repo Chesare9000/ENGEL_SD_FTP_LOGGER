@@ -5503,6 +5503,9 @@ void create_task_firebase() //once created it will automatically run
 
     task_firebase_active = true;
 
+    //we will need the oled in developer mode so acctivating here
+    oled_dev_mode_enabled = true;
+
     if(log_enabled && task_firebase_active) Serial.print("Task_firebase_active --\n");
 }
 

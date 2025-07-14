@@ -15,7 +15,7 @@
 #include <wifi.h> //local one
 #include <mqtt.h>
 #include <nvs.h>
-
+#include <rtc.h>
 //VARS
 //Initial state before NVS init
 bool wifi_has_credentials = false;
@@ -138,3 +138,37 @@ void wifi_off()
 }
 
                     
+
+
+const char* ntpServer = "pool.ntp.org";
+const long  gmtOffset_sec = 3600;  // UTC+1 for Germany
+const int   daylightOffset_sec = 3600; // Additional +1hr in summer
+
+
+bool update_time_via_wifi()
+{
+  if(WiFi.status() !=  WL_CONNECTED)
+  {
+    Serial.printf("\n ERROR on setup_wifi_and_time : NOT CONNECTED TO WIFI");
+    return false;
+
+  }
+
+  configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
+  struct tm timeinfo;
+  if (!getLocalTime(&timeinfo))
+  {
+    Serial.println("[NTP] Failed to obtain time");
+    return false;
+  }
+
+  Serial.printf("[NTP] Time obtained: %s", asctime(&timeinfo));
+
+  // Now set RTC with this time
+  sync_rtc_from_esp32_time();
+
+  //rtc_print_time();
+
+  return true;
+
+}

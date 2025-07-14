@@ -740,6 +740,7 @@ extern bool oled_needs_clear;
 
 
 
+
 extern int task_priority_sd;
 
 //NVS related
@@ -833,4 +834,11 @@ extern bool black_box_need_firebase_update;
 
 extern bool task_logger_sd_ftp_running;
 
+extern char* ota_ssid; 
 
+extern int logger_black_box_gap_ms;
+
+extern bool oled_dev_mode_enabled;
+
+
+extern bool inputs_are_missing;

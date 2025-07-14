@@ -254,6 +254,9 @@ void loop()
 //TODO
 //MAKE TIMERS FOR INDIVIDUAL FIREBASE TIMERS
 
+
+//HW add battery for RTC and change RTC if not compatible with battery
+
 //MAKE DEMOS FOR LEDS ON IMUS
 //GYRO
 //ACC

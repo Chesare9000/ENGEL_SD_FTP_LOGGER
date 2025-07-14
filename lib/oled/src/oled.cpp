@@ -14,6 +14,8 @@
 
 #define acc_threshold 100
 
+bool oled_dev_mode_enabled = false;
+
 int old_lux_val = 0;
 
 int aux_counter = 0;
@@ -55,10 +57,24 @@ void oled_init()
     oled_initialized = true;  
 }
 
+
 //For all fns regarding OLED we will 
 //update the var: oled_needs_refresh = true;
-//and the i2c_manager will decvide when to oled.updateDisplay(); 
+//and the i2c_manager will decide when to oled.updateDisplay(); 
 
+
+void oled_clear()
+{
+    oled.clearBuffer();
+    oled.clearDisplay();  // clear RAM in the display
+}
+
+void oled_refresh()
+{
+    oled.sendBuffer();
+    //oled.updateDisplay();
+    oled_needs_refresh = false; //Resetting flag
+}
 
 
 //This wont work with I2C manager , is just a test
@@ -102,18 +118,7 @@ void oled_gps_test(int gps_test_nr)
 }
 
 
-void oled_clear()
-{
-    oled.clearBuffer();
-    oled.clearDisplay();  // clear RAM in the display
-}
 
-void oled_refresh()
-{
-    oled.sendBuffer();
-    //oled.updateDisplay();
-    oled_needs_refresh = false; //Resetting flag
-}
 
 void oled_gps_not_detected()
 {
@@ -286,6 +291,22 @@ void oled_can_waiting_data()
     oled.drawStr(0,60,"CAN DATA");
     oled_needs_refresh = true;
 }
+
+void oled_error_rtc_not_calibrated()
+{
+
+    oled.drawStr(0,50,"ERROR");
+    oled.drawStr(0,60,"RTC NOT");
+    oled.drawStr(0,70,"CALIBRATED!");
+
+    oled.drawStr(0,90,"RETURNING");
+    oled.drawStr(0,100,"TO ");
+    oled.drawStr(0,110,"MENU!");
+    
+    oled_needs_refresh = true;
+
+}
+
 
 void oled_can_data_template()
 {
@@ -520,37 +541,121 @@ void oled_template_logger_sd_ftp(int cursor_pos) //Show the relevant info for th
     //Eliminate any previous value for the oled
     oled.clearBuffer();
 
-    //DEVEL MODE
     oled.drawStr(0,10,"ENGEL_V4");
+
     oled.drawStr(0,20,"LOGGER MENU");
 
-    //OPTIONS
     oled.setCursor(0,30);
-    oled.printf("SELECT MODE");  
+    if(WiFi.isConnected())
+    {
+        //setting to smaller font   
+        oled.setFont(u8g2_font_tiny5_tr); 
+        oled.print(WiFi.localIP());
+        oled.setFont(u8g2_font_5x7_tf);
+    }
+    else oled.printf("WiFi : N/C");
+
+    oled.setCursor(0,40);
+    oled.printf("BB:%d ms", logger_black_box_gap_ms);
+
+    //Consider starting here the Arrow gap on x
 
     oled.setCursor(10,50);
-    oled.printf("WIFI LIST");
-
+    oled.printf("WiFi LIST");
+    
     oled.setCursor(10,60);
-    oled.printf("WIFI CONN.");
+    oled.print("WIFI CONN.");
 
     oled.setCursor(10,70);
-    oled.printf("LOG_MS");   
+    oled.print("LOG_MS");   
 
     oled.setCursor(10,80);
-    oled.printf("START LOG");
+    oled.print("START LOG");
 
     oled.setCursor(10,90);
-    oled.printf("FTP_HS");
+    oled.print("FTP_HS");
 
     oled.setCursor(10,100);
-    oled.printf("FTP_WIFI");
+    oled.print("FTP_WIFI");
 
     oled.setCursor(10,110);
-    oled.printf("LEDS");
+    oled.print("LEDS");
 
     oled.setCursor(10,120);
+    oled.print("OTA");
+
+    //Here cursor
+
+    oled.setCursor(0,cursor_pos);
+    oled.printf(">");  
+
+    //Send    
+    //oled.updateDisplay();
+    oled_needs_refresh = true;
+}
+
+
+
+void oled_template_logger_wifi_menu(int cursor_pos)
+{
+    //Eliminate any previous value for the oled
+    oled.clearBuffer();
+
+    //DEVEL MODE
+    oled.drawStr(0,10,"ENGEL_V4");
+    oled.drawStr(0,20,"WIFI MENU");
+
+    //OPTIONS
+    oled.setCursor(10,50);
+    oled.printf("CESAR");  
+
+    oled.setCursor(10,60);
+    oled.printf("MARVIN");
+
+    oled.setCursor(10,70);
+    oled.printf("MOTION");
+
+    oled.setCursor(10,80);
+    oled.printf("HQ");   
+
+    oled.setCursor(10,90);
     oled.printf("OTA");
+
+    //Here cursor
+
+    oled.setCursor(0,cursor_pos);
+    oled.printf(">");  
+
+    //Send    
+    //oled.updateDisplay();
+    oled_needs_refresh = true;
+} 
+
+void oled_template_logger_ms_menu(int cursor_pos)
+{
+    //Eliminate any previous value for the oled
+    oled.clearBuffer();
+
+    //DEVEL MODE
+    oled.drawStr(0,10,"ENGEL_V4");
+    oled.drawStr(0,20,"LOGGER_MS");
+    oled.drawStr(0,30,"SELECT GAP");
+
+    //OPTIONS
+    oled.setCursor(10,50);
+    oled.printf("10 ms");  
+
+    oled.setCursor(10,60);
+    oled.printf("20 ms");
+
+    oled.setCursor(10,70);
+    oled.printf("50 ms");
+
+    oled.setCursor(10,80);
+    oled.printf("100 ms");   
+
+    oled.setCursor(10,90);
+    oled.printf("1000 ms");
 
     //Here cursor
 
@@ -1377,7 +1482,7 @@ void oled_task_logger_sd_ftp_running()
 
 
 
-void oled_ota()
+void oled_ota(char* ssid)
 {
     
     oled.clearBuffer();
@@ -1394,7 +1499,7 @@ void oled_ota()
 
         oled.setFont(u8g2_font_04b_03_tr); //<- Mod Font
         oled.setCursor(0,100);
-        oled.print(wifi_ssid); 
+        oled.print(ssid); 
 
         oled.setFont(u8g2_font_5x7_tf); //<- Original Font
     }
@@ -1405,7 +1510,7 @@ void oled_ota()
 
         oled.setFont(u8g2_font_04b_03_tr); //<- Mod Font
         oled.setCursor(0,60);
-        oled.print(wifi_ssid);
+        oled.print(ssid);
 
         oled.setFont(u8g2_font_5x7_tf); //<- Original Font
         oled.drawStr(0,80,"IP Adress:");
@@ -1415,6 +1520,73 @@ void oled_ota()
         oled.print(WiFi.localIP());
         oled.setFont(u8g2_font_5x7_tf); //<- Original Font
     }  
+
+    oled_needs_refresh = true;
+}
+
+void oled_logger_wifi(char* ssid)
+{
+    
+    oled.clearBuffer();
+    
+    oled.drawStr(0,10,"ENGEL_V4");
+    oled.drawStr(0,20,"LOGGER");
+
+    
+    if(WiFi.status() != WL_CONNECTED)
+    {
+        oled.drawStr(0,40,"WIFI");
+        oled.drawStr(0,60,"CONNECTING");      
+        oled.drawStr(0,80,"TO");  
+
+        oled.setFont(u8g2_font_04b_03_tr); //<- Mod Font
+        oled.setCursor(0,100);
+        oled.print(ssid); 
+
+        oled.setFont(u8g2_font_5x7_tf); //<- Original Font
+    }
+    else
+    {
+        oled.drawStr(0,40,"CONNECTED");
+        oled.drawStr(0,50,"TO");
+
+        oled.setFont(u8g2_font_04b_03_tr); //<- Mod Font
+        oled.setCursor(0,60);
+        oled.print(ssid);
+
+        oled.setFont(u8g2_font_5x7_tf); //<- Original Font
+        oled.drawStr(0,80,"IP Adress:");
+
+        oled.setFont(u8g2_font_04b_03_tr); //<- Mod Font
+        oled.setCursor(0,90);
+        oled.print(WiFi.localIP());
+        oled.setFont(u8g2_font_5x7_tf); //<- Original Font
+    }  
+
+    oled_needs_refresh = true;
+}
+
+void oled_logger_wifi_failed()
+{
+    
+    oled.clearBuffer();
+    
+    oled.drawStr(0,10,"ENGEL_V4");
+    oled.drawStr(0,20,"LOGGER");
+
+    
+    if(WiFi.status() != WL_CONNECTED)
+    {
+        oled.drawStr(0,40,"WIFI");
+        oled.drawStr(0,60,"ERROR");      
+
+
+        oled.drawStr(0,80,"COULDNT");  
+        oled.drawStr(0,100,"CONNECT");
+        
+        oled.drawStr(0,110,"RESTARTING");
+        oled.drawStr(0,120,"ESP");
+    }
 
     oled_needs_refresh = true;
 }
@@ -1758,7 +1930,7 @@ void oled_black_box_info()
     oled.drawStr(0,20,"BLACK_BOX");
     
     oled.setCursor(0,30);
-    oled.printf("#%d",black_box_log_nr);
+    oled.printf("# %d",black_box_log_nr);
 
     oled.setCursor(0,40);
     oled.printf("V_BAT: %.2f",bat_voltage);
@@ -1805,7 +1977,7 @@ void oled_black_box_info_on_firebase_task()
     oled.drawStr(0,20,"BLACK_BOX");
     
     oled.setCursor(0,30);
-    oled.printf("#%d",black_box_log_nr);
+    oled.printf("# %d",black_box_log_nr);
 
     oled.setCursor(0,40);
     oled.printf("V_BAT: %.2f",bat_voltage);
@@ -2022,7 +2194,7 @@ void oled_dev_info(int screen_nr)
 
         case 7: 
         {
-            oled_ota(); 
+            oled_ota(ota_ssid); 
         }
         break;
         

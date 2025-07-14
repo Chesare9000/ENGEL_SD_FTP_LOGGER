@@ -20,3 +20,5 @@ void alarm_destroy(int alarm_id);
 void check_alarms();
 
 void sync_rtc_from_esp32_time();
+
+void rtc_print_time();

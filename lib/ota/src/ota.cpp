@@ -27,8 +27,8 @@ int ota_waiting_for_wifi_timeout = 10000; // 60 seconds timeout
 //const char* ota_ssid = "Not_Your_Hotspot";
 //const char* ota_password = "wifirocks";
 
-const char* ota_ssid = "ota";
-const char* ota_password = "password";
+char* ota_ssid = "ota";
+char* ota_password = "ota";
 
 WebServer ota_server(80);
 
@@ -72,7 +72,7 @@ void ota_setup(void)
 {
   Serial.print("\nRUNNING OTA Setup...");  
 
-  oled_ota();
+  oled_ota(ota_ssid);
   oled_refresh();
 
 
@@ -98,7 +98,7 @@ void ota_setup(void)
   buzzer_startup();
 
   //TODO later add more interesting things to the OLED_OTA
-  oled_ota();
+  oled_ota(ota_ssid);
   oled_refresh();
 
   unsigned long waiting_for_wifi = millis();
@@ -125,7 +125,7 @@ void ota_setup(void)
   Serial.println(WiFi.localIP());
 
    //TODO later add more interesting things to the OLED_OTA
-  oled_ota();
+  oled_ota(ota_ssid);
   oled_refresh();
 
   wait(1000);
@@ -169,7 +169,7 @@ void create_task_ota() //once created it will automatically run
         return; // Exit if the task is already active
     }
 
-    oled_ota();
+    oled_ota(ota_ssid);
     oled_refresh();
     
 

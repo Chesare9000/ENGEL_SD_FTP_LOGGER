@@ -43,6 +43,8 @@ void oled_template_buzzer(int cursor_pos);
 
 void oled_template_logger_sd_ftp(int cursor_pos);
 
+void oled_template_logger_ms_menu(int cursor_pos);
+
 
 void oled_demo_patterns(int pattern);
 void oled_demo_lux(char color , int brightness);
@@ -53,7 +55,7 @@ void oled_demo_lock(int lock_status,int remaining_attempts);
 void oled_demo_imu_pos(char axis);
 void oled_demo_imu_acc(char axis);
 
-
+void oled_error_rtc_not_calibrated();
 
 void oled_demo_status(int screen);
 
@@ -68,7 +70,11 @@ void oled_wifi_demo();
 void oled_mqtt(int cycle_nr);
 void oled_firebase(int cycle_nr);
 
-void oled_ota();
+void oled_ota(char* ssid);
+void oled_logger_wifi(char* ssid);
+void oled_logger_wifi_failed();
+
+void oled_template_logger_wifi_menu(int cursor_pos);
 
 void oled_alarm_loop(int alarm_id);
 void oled_alarm_cleared(int alarm_id); //Just dismissed but if recurrent will continue happening

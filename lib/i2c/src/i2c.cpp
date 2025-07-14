@@ -392,8 +392,8 @@ void i2c_manager(void * parameters) //Whenever nothing critical is happening
                         //TODO TEST THIS AND CHECK IF IT IS STABLE 
 
                         //If the oled_developer_screen is active (this will override any other oled so important to have it on -1 until changed on firebase)
-                        /*
-                        if(oled_initialized && millis() - firebase_oled_last_update > firebase_oled_update_interval && (oled_dev_screen_nr != -1 || oled_needs_clear || firebase_first_loop))
+                        
+                        if(oled_initialized && oled_dev_mode_enabled && millis() - firebase_oled_last_update > firebase_oled_update_interval && (oled_dev_screen_nr != -1 || oled_needs_clear || firebase_first_loop))
                         {
                             if(oled_needs_clear || (oled_dev_screen_nr == 0 && firebase_first_loop && firebase_initialized))
                             {
@@ -406,7 +406,7 @@ void i2c_manager(void * parameters) //Whenever nothing critical is happening
                             //1 to 5 , -1 is off
                             oled_dev_info(oled_dev_screen_nr);
                         }
-                        */
+                        
 
                         if(oled_needs_refresh)
                         {

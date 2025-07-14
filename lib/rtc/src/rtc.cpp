@@ -120,9 +120,14 @@ void sync_rtc_from_esp32_time()
   );
   MCP7940.adjust(dt);  // Sets the RTC with the current ESP32 time
 
+  /*
   Serial.printf("[RTC] Time synced to RTC: %04d-%02d-%02d %02d:%02d:%02d\n",
                 tm_time->tm_year + 1900, tm_time->tm_mon + 1, tm_time->tm_mday,
                 tm_time->tm_hour, tm_time->tm_min, tm_time->tm_sec);
+  */
+ 
+  Serial.printf("\n[RTC] Time synced to RTC: %04d-%02d-%02d %02d:%02d:%02d\n",
+                dt.year(), dt.month(), dt.day(), dt.hour(), dt.minute(), dt.second());
 
   rtc_calibrated = true;
 }
@@ -431,7 +436,17 @@ void check_alarms()
   //TODO : For ALARM_1
 
 }
- 
+
+
+void rtc_print_time()
+{
+  if (!MCP7940.begin()) return;
+
+  DateTime now = MCP7940.now();
+  Serial.printf("[RTC] Current RTC time: %04d-%02d-%02d %02d:%02d:%02d\n",
+                now.year(), now.month(), now.day(),
+                now.hour(), now.minute(), now.second());
+}
 
   
                    
