@@ -39,6 +39,8 @@
 
 #include <logger.h>
 
+#include <storage_via_wifi.h>
+
 //#include "esp_task_wdt.h"
 
 
@@ -221,7 +223,8 @@ void setup()
         //change to firebase when ready
 
 
-        
+        if(!firebasse_file_initialized) firebase_file_init();
+       /*
         if(!task_logger_sd_ftp_running)
         {
             Serial.print("--\nRunning task_logger_sd_ftp Initialization Order"); 
@@ -234,6 +237,7 @@ void setup()
             create_task_logger_sd_ftp();
             wait(1000);
         }
+        */
             
 	}
 
@@ -248,7 +252,20 @@ void setup()
 
 void loop()
 {
-	wait(100);
+    if(firebasse_file_initialized) 
+    {
+        run_storage_via_wifi();
+    }
+
+    else
+    {
+        Serial.print("ERROR , Firebase File not INIT!");
+        wait(1000);
+        firebase_file_init();
+    }
+
+    wait(10);
+	
 }
 
 //TODO
@@ -256,6 +273,8 @@ void loop()
 
 
 //HW add battery for RTC and change RTC if not compatible with battery
+
+//Check charging circuit and confirm it works ok
 
 //MAKE DEMOS FOR LEDS ON IMUS
 //GYRO

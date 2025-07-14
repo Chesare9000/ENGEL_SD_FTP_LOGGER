@@ -51,7 +51,6 @@ void sd_log_jump_line();
 
 void sd_log_add_parameter();
 
-
 bool sd_get_log_imu_pitch();
 bool sd_get_log_imu_roll();
 bool sd_get_log_imu_yaw();
@@ -76,6 +75,10 @@ bool sd_get_log_mubea_can_gear();
 bool sd_get_log_mubea_can_mileage();
 bool sd_get_log_mubea_can_error_code();
 bool sd_get_log_mubea_can_recuperation();
+
+bool sd_get_black_box_update_gap_ms();
+
+void print_sd_log_folder_content() ;
 
 bool ensure_sd_space(int minFreeBytes, bool log_to_serial);// 1 MB = 1024 * 1024 bytes
 

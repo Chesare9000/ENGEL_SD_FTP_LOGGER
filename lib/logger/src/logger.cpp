@@ -31,9 +31,6 @@ int wifi_selected = 0;
 char* logger_wifi_ssid = "";
 char* logger_wifi_password = "";
 
-
-int logger_black_box_gap_ms = 100;
-
 //Logger Task (SD+FTP) version--------------------------------- 
 
 TaskHandle_t task_logger_sd_ftp_handle = NULL;
@@ -116,6 +113,8 @@ void task_logger_sd_ftp(void * parameters)
 
     btn_1_interr_enable_on_press();
     btn_2_interr_enable_on_press();
+
+    oled_dev_mode_enabled = false; //This tassk manage its own oled fns.
 
     while(1)
     {
@@ -379,6 +378,8 @@ void create_task_wifi_selector() //once created it will automatically run
 {
     if(log_enabled) Serial.print("\n--creating task_wifi_selector--");
     wait(100);
+
+    oled_dev_mode_enabled = false; //This tassk manage its own oled fns.
     
     task_wifi_selector_declare();
     wait(100);
@@ -690,6 +691,8 @@ void create_task_logger_ms_selector() //once created it will automatically run
 {
     if(log_enabled) Serial.print("\n--task_logger_ms_selector--");
     wait(100);
+
+    oled_dev_mode_enabled = false; //This tassk manage its own oled fns.
     
     task_logger_ms_selector_declare();
     wait(100);
@@ -1039,3 +1042,6 @@ void task_button_mapper_for_oled_dev_screen_nr(void * parameters)
 }
 
 
+//al iniciar logger decir que estamos imprimiendo wifi
+
+//make more precise Hz and change to that for the refresh rate considering the processing times

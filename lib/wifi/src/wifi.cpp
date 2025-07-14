@@ -102,6 +102,49 @@ bool wifi_connect()
   return true;
 }
 
+bool wifi_connect_to(char* ssid, char* pass ) 
+{
+  int counter = 0;
+
+  //wifi_status = wifi_status_off;
+
+  if(oled_enabled)oled_wifi();
+
+  WiFi.begin(ssid,pass);
+  wifi_status = wifi_status_connecting;
+  if(oled_enabled)oled_wifi();
+  // print SSID to the serial interface for debugging  
+  if(log_enabled)
+  {
+    Serial.print("Connecting to WiFi with SSID: ");
+    Serial.print(wifi_ssid.c_str());
+  } 
+  
+  while (WiFi.status() != WL_CONNECTED) // wait until WiFi is connected
+  {             
+    wait(1000);
+    Serial.print("*");
+    counter++;
+    if(counter >10)
+    {
+        if(log_enabled)Serial.println("ERROR while trying to connect to WIFI");
+        wifi_status = wifi_status_on_idle;
+        return false;
+    }
+  }
+
+  wifi_status = wifi_status_connected;
+
+  Serial.print("\n Connected to : ");
+  Serial.print(wifi_ssid.c_str());
+  Serial.print(", with IP Address: ");
+  Serial.println(WiFi.localIP());                     // show IP address that the ESP32 has received from router
+  
+  if(oled_enabled)oled_wifi();
+  wifi_connected = true;
+  return true;
+}
+
 bool wifi_disconnect()
 {
   if (WiFi.status() == WL_CONNECTED) 

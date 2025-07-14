@@ -836,9 +836,8 @@ extern bool task_logger_sd_ftp_running;
 
 extern char* ota_ssid; 
 
-extern int logger_black_box_gap_ms;
-
 extern bool oled_dev_mode_enabled;
 
-
 extern bool inputs_are_missing;
+
+extern bool firebasse_file_initialized ;

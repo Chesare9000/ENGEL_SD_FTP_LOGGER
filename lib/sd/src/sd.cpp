@@ -119,6 +119,8 @@ bool black_box_mubea_can_mileage_log_enabled       = true;
 bool black_box_mubea_can_error_code_log_enabled     = true;
 bool black_box_mubea_can_recuperation_log_enabled  = true; 
 
+bool black_box_update_gap_ms_enabled  = true; 
+
 
 bool black_box_running = false;
 
@@ -703,7 +705,14 @@ void sd_populate_all()
         sd_log_add_parameter();
         bool ok = sd_get_log_mubea_can_recuperation();
         if (!ok) Serial.print("ERROR ON sd_get_log_mubea_can_recuperation()");
-    }     
+    }  
+    
+    if (black_box_update_gap_ms_enabled) 
+    {
+        sd_log_add_parameter();
+        bool ok = sd_get_black_box_update_gap_ms();
+        if (!ok) Serial.print("ERROR ON sd_get_black_box_update_gap_ms()");
+    } 
 
     //Adding the line finish
     sd_log_jump_line();
@@ -967,6 +976,17 @@ bool sd_get_log_mubea_can_recuperation()
 }
 
 
+bool sd_get_black_box_update_gap_ms() 
+{
+    if (black_box_first_loop) 
+    {
+        sd_data_header += "update_gap_ms";
+    }
+    sd_data_payload += String(black_box_logging_interval_milliseconds);
+    return true;
+}
+
+
 //For the Timestamp
 //TODO , later do it online
 
@@ -1091,6 +1111,9 @@ void run_black_box()
         }
         file.close();
 
+
+        Serial.print("\n ----------------- Running Black Box --------------- \n ");
+
         
         if(black_box_serial_mode == black_box_serial_raw)
         {
@@ -1098,6 +1121,8 @@ void run_black_box()
             Serial.print(sd_data_header);
             Serial.println();
         }
+
+
     }
 
     //Starting LOG Activities
@@ -1285,6 +1310,33 @@ void appendFile(fs::FS &fs, const char * path, const char * message)
     }
     file.close();
 }
+
+//To Display the /logs content
+
+
+void print_sd_log_folder_content() 
+{
+    Serial.println("Listing .txt files in /logs:");
+    File dir = SD.open("/logs");
+    File file = dir.openNextFile();
+    while (file) 
+    {
+        if (!file.isDirectory() && String(file.name()).endsWith(".txt")) 
+        {
+            Serial.println(file.name());
+        }
+        file = dir.openNextFile();
+    }    
+}
+
+
+
+
+
+
+
+
+
 
 
 

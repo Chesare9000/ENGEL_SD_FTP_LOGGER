@@ -302,7 +302,7 @@ void oled_error_rtc_not_calibrated()
     oled.drawStr(0,90,"RETURNING");
     oled.drawStr(0,100,"TO ");
     oled.drawStr(0,110,"MENU!");
-    
+
     oled_needs_refresh = true;
 
 }
@@ -556,7 +556,7 @@ void oled_template_logger_sd_ftp(int cursor_pos) //Show the relevant info for th
     else oled.printf("WiFi : N/C");
 
     oled.setCursor(0,40);
-    oled.printf("BB:%d ms", logger_black_box_gap_ms);
+    oled.printf("BB:%d ms", black_box_logging_interval_milliseconds);
 
     //Consider starting here the Arrow gap on x
 
