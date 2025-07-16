@@ -117,7 +117,7 @@ bool wifi_connect_to(char* ssid, char* pass )
   if(log_enabled)
   {
     Serial.print("Connecting to WiFi with SSID: ");
-    Serial.print(wifi_ssid.c_str());
+    Serial.print(ssid);
   } 
   
   while (WiFi.status() != WL_CONNECTED) // wait until WiFi is connected
@@ -136,7 +136,7 @@ bool wifi_connect_to(char* ssid, char* pass )
   wifi_status = wifi_status_connected;
 
   Serial.print("\n Connected to : ");
-  Serial.print(wifi_ssid.c_str());
+  Serial.print(ssid);
   Serial.print(", with IP Address: ");
   Serial.println(WiFi.localIP());                     // show IP address that the ESP32 has received from router
   

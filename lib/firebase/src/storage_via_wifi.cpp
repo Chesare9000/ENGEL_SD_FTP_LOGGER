@@ -32,8 +32,12 @@
 #define firebase_url_for_lte "engel-dev-61ef3-default-rtdb.europe-west1.firebasedatabase.app"
 
 
-#define WIFI_SSID "Not_Your_Hotspot"
-#define WIFI_PASSWORD "wifirocks"
+//#define WIFI_SSID "Not_Your_Hotspot"
+//#define WIFI_PASSWORD "wifirocks"
+
+#define WIFI_SSID "cesar"
+#define WIFI_PASSWORD "cesar1234"
+
 
 #define API_KEY firebase_api_key
 #define USER_EMAIL firebase_user
@@ -51,6 +55,8 @@
 // User functions
 void processData2(AsyncResult &aResult);
 void file_operation_callback2(File &file, const char *filename, file_operating_mode mode);
+
+//bool upload_completed = false;
 
 // ServiceAuth is required for Google Cloud Functions functions.
 //ServiceAuth sa_auth(USER_EMAIL, "engel-dev-61ef3", PRIVATE_KEY, 3000 /* expire period in seconds (<= 3600) */);
@@ -101,7 +107,7 @@ bool firebase_file_init()
 
     // Configure SSL client
     ssl_client2.setInsecure();
-    ssl_client2.setTimeout(1000);
+    ssl_client2.setTimeout(5000);
     ssl_client2.setHandshakeTimeout(5);
     
     //set_ssl_client_insecure_and_buffer(ssl_client2);
@@ -111,6 +117,7 @@ bool firebase_file_init()
 
     Serial.println("Initializing app2...");
     initializeApp(aClient2, app2, getAuth(user_auth2), processData2, "authTask");
+    
     // initializeApp(aClient, app, getAuth(user_auth), auth_debug_print, "authTask");
 
     //app2.getApp<CloudStorage>(cstorage);
@@ -189,6 +196,7 @@ void processData2(AsyncResult &aResult)
             Firebase.printf("Upload task: %s, complete!\n", aResult.uid().c_str());
             Serial.print("Download URL: ");
             Serial.println(aResult.uploadInfo().downloadUrl);
+            //upload_completed = true;
         }
     }
 }
@@ -251,13 +259,20 @@ void uploadLogsFromSD()
         //logFile.setFile(filePath.c_str(),file_operation_callback2);
         
         Serial.print("\nUploading file: ");Serial.print(filePath);
-        Serial.print("\nFirebase Path: ");Serial.print(firebasePath);Serial.println("\n");
-        Serial.printf("File Size: %d\n", entry.size());
+        Serial.print("\nFirebase Path: "); Serial.print(firebasePath);
+
+        if(entry.size() > 1000000)Serial.printf("\nFile Size: %d MB \n", int(entry.size()/1000000));//MBytes
+        else if(entry.size() > 1000)   Serial.printf("\nFile Size: %d KB \n", int(entry.size()/1000));   //KBytes
+        else Serial.printf("File Size: %d Bytes\n", entry.size()); //Bytes
 
         //cstorage.upload(aClient2,GoogleCloudStorage::Parent(STORAGE_BUCKET_ID, firebasePath.c_str()),getFile(media_file),"text/plain",processData2,"⬆️  logUpload");
         
-        //Was using this one before
+        //resetting flag for ack 
+        // upload_completed= false; This is for the asyncronous, but kind of defeat the purpose to not wait until competion 
+
+        //Was using this one before as is asyncronous , but doent really work that well , maybe revisit it later
         //storage.upload(aClient2, FirebaseStorage::Parent(STORAGE_BUCKET_ID, firebasePath.c_str()), getFile(logFile), "text/plain", processData2, "⬆️  uploadTask");
+
 
 
         // Sync call which waits until the operation complete.
@@ -265,7 +280,37 @@ void uploadLogsFromSD()
         if (status)Serial.println("Upload task(await), complete!");
         else Firebase.printf("Error, msg: %s, code: %d\n", aClient2.lastError().message().c_str(), aClient2.lastError().code());
 
-        wait(5000);
+
+        /*
+        This is for the asyncronous, but kind of defeat the purpose to not wait until competion 
+
+        //Serial.println("Waiting for upload completion..");
+
+        //unsigned long waiting_time = millis();
+              
+        while(!upload_completed)
+        {
+            if(upload_completed)
+            {
+                Serial.println("\nFile uploaded ...");
+                break;
+            }
+            else 
+            {
+                if (millis() > waiting_time + 1000)
+                {
+                    Serial.print(".");//heartbeat
+                    waiting_time = millis();
+                }
+            }
+            wait(10);
+        }
+        */
+
+
+        //fix tx instead and see why they are not there
+        
+        //ccheck if increase the buffer is good
         /*
         
         Serial.println("Uploading file...");
