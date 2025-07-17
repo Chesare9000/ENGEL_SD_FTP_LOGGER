@@ -112,3 +112,6 @@ void oled_riding_mode_enabled();
 void oled_main_status_changed_to_parking();
 
 void oled_dev_info(int screen_nr);
+
+
+void oled_logger_uploading(int current , int total );

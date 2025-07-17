@@ -1314,7 +1314,7 @@ void appendFile(fs::FS &fs, const char * path, const char * message)
 //To Display the /logs content
 
 
-void print_sd_log_folder_content() 
+int print_sd_log_folder_content() 
 {
     int total_files = 0;
 
@@ -1331,6 +1331,8 @@ void print_sd_log_folder_content()
         file = dir.openNextFile();
     }    
     Serial.printf("\n---Total Files : %d ", total_files );
+
+    return total_files;
 }
 
 //TODO later separate per day

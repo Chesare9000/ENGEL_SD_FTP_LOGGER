@@ -762,6 +762,47 @@ void oled_template_buzzer(int cursor_pos)
 } 
 
 
+
+
+void oled_logger_uploading(int current , int total )
+{
+    //Eliminate any previous value for the oled
+    oled.clearBuffer();
+
+    //DEVEL MODE
+    oled.drawStr(0,10,"ENGEL_V4");
+    oled.drawStr(0,20,"LOGGER");
+
+  
+    oled.setCursor(0,50);
+    oled.printf("UPLOADING");
+
+    oled.setCursor(0,60);
+    oled.printf("FILE");
+
+    oled.setCursor(0,80);
+    oled.print(current);   
+
+    oled.setCursor(0,90);
+    oled.printf("OF");
+
+    oled.setCursor(0,100);
+    oled.print(total);
+
+   //Will refresh when possible
+    oled_needs_refresh = true;
+} 
+
+
+
+
+
+
+
+
+
+
+
 void oled_demo_patterns(int pattern)
 {
     oled.clearBuffer();

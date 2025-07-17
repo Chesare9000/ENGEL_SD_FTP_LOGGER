@@ -241,6 +241,9 @@ void setup()
             
 	}
 
+    //TODO Delete after test
+    oled_needed++;
+
 	// will set up and start the ble service
 	// variables should be connected before this
 	// setup_ble();

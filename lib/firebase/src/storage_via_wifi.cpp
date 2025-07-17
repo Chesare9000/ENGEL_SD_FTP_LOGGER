@@ -22,6 +22,7 @@
 #include <WiFiClientSecure.h>
 #include <tools.h>
 #include <vars.h>
+#include <oled.h>
 
 
 
@@ -66,6 +67,8 @@ void file_operation_callback2(File &file, const char *filename, file_operating_m
 File myFile;
 
 
+int total_files_on_sd = 0;
+
 // Authentication
 UserAuth user_auth2(API_KEY, USER_EMAIL, USER_PASSWORD, 3000 /* expire period in seconds (<3600) */);
 
@@ -88,6 +91,49 @@ bool firebasse_file_initialized = false;
 
 //AsyncResult cloudStorageResult;
 AsyncResult storageResult;
+
+void processData2(AsyncResult &aResult)
+{
+    // Exits when no result available when calling from the loop.
+    if (!aResult.isResult())
+        return;
+
+    if (aResult.isEvent())
+    {
+        Firebase.printf("Event task: %s, msg: %s, code: %d\n", aResult.uid().c_str(), aResult.appEvent().message().c_str(), aResult.appEvent().code());
+    }
+
+    if (aResult.isDebug())
+    {
+        Firebase.printf("Debug task: %s, msg: %s\n", aResult.uid().c_str(), aResult.debug().c_str());
+    }
+
+    if (aResult.isError())
+    {
+        Firebase.printf("Error task: %s, msg: %s, code: %d\n", aResult.uid().c_str(), aResult.error().message().c_str(), aResult.error().code());
+    }
+
+    if (aResult.downloadProgress())
+    {
+        Firebase.printf("Downloaded, task: %s, %d%s (%d of %d)\n", aResult.uid().c_str(), aResult.downloadInfo().progress, "%", aResult.downloadInfo().downloaded, aResult.downloadInfo().total);
+        if (aResult.downloadInfo().total == aResult.downloadInfo().downloaded)
+        {
+            Firebase.printf("Download task: %s, complete!✅️\n", aResult.uid().c_str());
+        }
+    }
+
+    if (aResult.uploadProgress())
+    {
+        Firebase.printf("Uploaded, task: %s, %d%s (%d of %d)\n", aResult.uid().c_str(), aResult.uploadInfo().progress, "%", aResult.uploadInfo().uploaded, aResult.uploadInfo().total);
+        if (aResult.uploadInfo().total == aResult.uploadInfo().uploaded)
+        {
+            Firebase.printf("Upload task: %s, complete!✅️\n", aResult.uid().c_str());
+            Serial.print("Download URL: ");
+            Serial.println(aResult.uploadInfo().downloadUrl);
+        }
+    }
+}
+
 
 bool firebase_file_init()
 {
@@ -117,8 +163,6 @@ bool firebase_file_init()
 
     Serial.println("Initializing app2...");
     initializeApp(aClient2, app2, getAuth(user_auth2), processData2, "authTask");
-    
-    // initializeApp(aClient, app, getAuth(user_auth), auth_debug_print, "authTask");
 
     //app2.getApp<CloudStorage>(cstorage);
     // Or intialize the app and wait.
@@ -126,7 +170,7 @@ bool firebase_file_init()
 
     app2.getApp<Storage>(storage);
 
-    print_sd_log_folder_content();
+    total_files_on_sd = print_sd_log_folder_content();
 
     // Ensure the chip ID is read if it hasn't been updated
     if (!esp_id) 
@@ -150,55 +194,13 @@ void run_storage_via_wifi()
         taskComplete = true;
         uploadLogsFromSD();
     }
+    else wait(10);
 
     // For async call with AsyncResult.
     //processData2(cloudStorageResult);
 
     // For async call with AsyncResult.
-    processData2(storageResult);
-}
-
-void processData2(AsyncResult &aResult)
-{
-    // Exits when no result available when calling from the loop.
-    if (!aResult.isResult())
-        return;
-
-    if (aResult.isEvent())
-    {
-        Firebase.printf("Event task: %s, msg: %s, code: %d\n", aResult.uid().c_str(), aResult.appEvent().message().c_str(), aResult.appEvent().code());
-    }
-
-    if (aResult.isDebug())
-    {
-        Firebase.printf("Debug task: %s, msg: %s\n", aResult.uid().c_str(), aResult.debug().c_str());
-    }
-
-    if (aResult.isError())
-    {
-        Firebase.printf("Error task: %s, msg: %s, code: %d\n", aResult.uid().c_str(), aResult.error().message().c_str(), aResult.error().code());
-    }
-
-    if (aResult.downloadProgress())
-    {
-        Firebase.printf("Downloaded, task: %s, %d%s (%d of %d)\n", aResult.uid().c_str(), aResult.downloadInfo().progress, "%", aResult.downloadInfo().downloaded, aResult.downloadInfo().total);
-        if (aResult.downloadInfo().total == aResult.downloadInfo().downloaded)
-        {
-            Firebase.printf("Download task: %s, complete!\n", aResult.uid().c_str());
-        }
-    }
-
-    if (aResult.uploadProgress())
-    {
-        Firebase.printf("Uploaded, task: %s, %d%s (%d of %d)\n", aResult.uid().c_str(), aResult.uploadInfo().progress, "%", aResult.uploadInfo().uploaded, aResult.uploadInfo().total);
-        if (aResult.uploadInfo().total == aResult.uploadInfo().uploaded)
-        {
-            Firebase.printf("Upload task: %s, complete!\n", aResult.uid().c_str());
-            Serial.print("Download URL: ");
-            Serial.println(aResult.uploadInfo().downloadUrl);
-            //upload_completed = true;
-        }
-    }
+    //processData2(storageResult);
 }
 
 
@@ -232,14 +234,7 @@ void file_operation_callback2(File &file, const char *filename, file_operating_m
 
 void uploadLogsFromSD() 
 {     
-    /*
-    GoogleCloudStorage::UploadOptions options;
-    options.mime = "text/plain";
-    options.uploadType = GoogleCloudStorage::upload_type_resumable;
-    // options.uploadType = GoogleCloudStorage::upload_type_simple;
-    */
-
-
+    
   File dir = SD.open("/logs");
   if(!dir)
   {
@@ -266,18 +261,6 @@ void uploadLogsFromSD()
 
         FileConfig logFile(filePath.c_str(), file_operation_callback2);
 
-        //logFile.setFile(filePath.c_str(),file_operation_callback2);
-        
-       
-
-        //cstorage.upload(aClient2,GoogleCloudStorage::Parent(STORAGE_BUCKET_ID, firebasePath.c_str()),getFile(media_file),"text/plain",processData2,"⬆️  logUpload");
-        
-        //resetting flag for ack 
-        // upload_completed= false; This is for the asyncronous, but kind of defeat the purpose to not wait until competion 
-
-        //Was using this one before as is asyncronous , but doent really work that well , maybe revisit it later
-        //storage.upload(aClient2, FirebaseStorage::Parent(STORAGE_BUCKET_ID, firebasePath.c_str()), getFile(logFile), "text/plain", processData2, "⬆️  uploadTask");
-
         // Retry logic
         int attempt = 0;
         bool uploadSuccess = false;
@@ -292,8 +275,20 @@ void uploadLogsFromSD()
 
             if(entry.size() > 1000000)Serial.printf("\nFile Size: %d MB \n", int(entry.size()/1000000));//MBytes
             else if(entry.size() > 1000)   Serial.printf("\nFile Size: %d KB \n", int(entry.size()/1000));   //KBytes
-            else Serial.printf("File Size: %d Bytes\n", entry.size()); //Bytes
+            else Serial.printf("\nFile Size: %d Bytes\n", entry.size()); //Bytes
 
+            // REOPEN THE FILE FRESH FOR EACH ATTEMPT , so the file pointer is reset to the beginning.
+            File fresh_file = SD.open(filePath.c_str(), FILE_READ);
+            if (!fresh_file) 
+            {
+                Serial.println("\n---Error: Failed to reopen file for upload.");
+                break; // Give up on this file
+            }
+            
+
+            FileConfig logFile(filePath.c_str(), file_operation_callback2);
+
+            oled_logger_uploading(files_counter + 1 , total_files_on_sd );
             
             // Sync call which waits until the operation complete.
             bool status = storage.upload(aClient2, FirebaseStorage::Parent(STORAGE_BUCKET_ID, firebasePath.c_str()), getFile(logFile), "text/plain");
@@ -301,102 +296,23 @@ void uploadLogsFromSD()
             {
                 Serial.println("\n---- Upload task complete!");
                 uploadSuccess = true;
-                wait(1000);
+                wait(100);
             }
             else
             {
                 Firebase.printf("\nError, msg: %s, code: %d\n", aClient2.lastError().message().c_str(), aClient2.lastError().code());  
-
-                // Between retry attempts, force cleanup
-                //storageResult.clear();
-                //aClient2.stopAsync();
-    
-                wait(1000);
+                storageResult.clear();
+                aClient2.stopAsync();    
+                wait(100);
             }
-            
-            // Close and reopen file between attempts
-            //logFile.clear();
-            //logFile = FileConfig(filePath.c_str(), file_operation_callback2);
         }
 
         if (!uploadSuccess) 
         {
-            Serial.println("\nERROR : Max retry attempts reached. Moving to next file.");
+            Serial.println("\nERROR : Max retry attempts reached. Moving to next file.");            
         }
 
         entry.close();
-
-
-        /*
-        This is for the asyncronous, but kind of defeat the purpose to not wait until competion 
-
-        //Serial.println("Waiting for upload completion..");
-
-        //unsigned long waiting_time = millis();
-              
-        while(!upload_completed)
-        {
-            if(upload_completed)
-            {
-                Serial.println("\nFile uploaded ...");
-                break;
-            }
-            else 
-            {
-                if (millis() > waiting_time + 1000)
-                {
-                    Serial.print(".");//heartbeat
-                    waiting_time = millis();
-                }
-            }
-            wait(10);
-        }
-        */
-
-
-        //fix tx instead and see why they are not there
-        
-        //ccheck if increase the buffer is good
-        /*
-        
-        Serial.println("Uploading file...");
-
-        // Async call with callback function.
-        //cstorage.upload(aClient2, GoogleCloudStorage::Parent(STORAGE_BUCKET_ID, "media.mp4"), getFile(media_file), options, pttempt nr. 2 --------------------------------
-        rocessData, "⬆️  uploadTask");
-
-        // Async call with AsyncResult for returning result.
-        //cstorage.upload(aClient2, GoogleCloudStorage::Parent(STORAGE_BUCKET_ID, "media.mp4"), getFile(media_file), options, cloudStorageResult);
-
-        // Sync call which waits until the operation complete.
-        
-        bool status = cstorage.upload(aClient2, GoogleCloudStorage::Parent(STORAGE_BUCKET_ID, "media.mp4"), getFile(media_file), options);
-        if (status)
-            Serial.println("🔼 Upload task(await), complete!✅️");
-        else
-            Firebase.printf("Error, msg: %s, code: %d\n", aClient2.lastError().message().c_str(), aClient2.lastError().code());
-
-        
-
-        For the Normal Storage from the example 
-
-        Serial.println("Uploading file...");
-
-        // Async call with callback function.
-        storage.upload(aClient, FirebaseStorage::Parent(STORAGE_BUCKET_ID, "media.mp4"), getFile(media_file), "video/mp4", processData, "⬆️  uploadTask");
-
-        // Async call with AsyncResult for returning result.
-        storage.upload(aClient, FirebaseStorage::Parent(STORAGE_BUCKET_ID, "media.mp4"), getFile(media_file), "video/mp4", storageResult);
-
-        // Sync call which waits until the operation complete.
-        bool status = storage.upload(aClient, FirebaseStorage::Parent(STORAGE_BUCKET_ID, "media.mp4"), getFile(media_file), "video/mp4");
-            if (status)
-            Serial.println("🔼 Upload task(await), complete!✅️");
-        else
-            Firebase.printf("Error, msg: %s, code: %d\n", aClient.lastError().message().c_str(), aClient.lastError().code());
-
-
-        */
     }
     entry = dir.openNextFile();
     files_counter++;

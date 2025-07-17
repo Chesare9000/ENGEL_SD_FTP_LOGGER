@@ -78,7 +78,7 @@ bool sd_get_log_mubea_can_recuperation();
 
 bool sd_get_black_box_update_gap_ms();
 
-void print_sd_log_folder_content() ;
+int print_sd_log_folder_content() ;
 
 bool ensure_sd_space(int minFreeBytes, bool log_to_serial);// 1 MB = 1024 * 1024 bytes
 
