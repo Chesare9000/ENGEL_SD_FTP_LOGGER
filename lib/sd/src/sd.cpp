@@ -1316,6 +1316,8 @@ void appendFile(fs::FS &fs, const char * path, const char * message)
 
 void print_sd_log_folder_content() 
 {
+    int total_files = 0;
+
     Serial.println("Listing .txt files in /logs:");
     File dir = SD.open("/logs");
     File file = dir.openNextFile();
@@ -1324,21 +1326,12 @@ void print_sd_log_folder_content()
         if (!file.isDirectory() && String(file.name()).endsWith(".txt")) 
         {
             Serial.println(file.name());
+            total_files++;
         }
         file = dir.openNextFile();
     }    
+    Serial.printf("\n---Total Files : %d ", total_files );
 }
-
-
-
-
-
-
-
-
-
-
-
 
 //TODO later separate per day
 

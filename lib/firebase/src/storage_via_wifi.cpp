@@ -241,7 +241,17 @@ void uploadLogsFromSD()
 
 
   File dir = SD.open("/logs");
+  if(!dir)
+  {
+    Serial.println("Failed to open /logs directory");
+    return;
+  }
+
+  int files_counter = 0 ;
+
   File entry = dir.openNextFile();
+
+
   while (entry) 
   {
     if (!entry.isDirectory() && String(entry.name()).endsWith(".txt")) 
@@ -258,12 +268,7 @@ void uploadLogsFromSD()
 
         //logFile.setFile(filePath.c_str(),file_operation_callback2);
         
-        Serial.print("\nUploading file: ");Serial.print(filePath);
-        Serial.print("\nFirebase Path: "); Serial.print(firebasePath);
-
-        if(entry.size() > 1000000)Serial.printf("\nFile Size: %d MB \n", int(entry.size()/1000000));//MBytes
-        else if(entry.size() > 1000)   Serial.printf("\nFile Size: %d KB \n", int(entry.size()/1000));   //KBytes
-        else Serial.printf("File Size: %d Bytes\n", entry.size()); //Bytes
+       
 
         //cstorage.upload(aClient2,GoogleCloudStorage::Parent(STORAGE_BUCKET_ID, firebasePath.c_str()),getFile(media_file),"text/plain",processData2,"⬆️  logUpload");
         
@@ -273,12 +278,53 @@ void uploadLogsFromSD()
         //Was using this one before as is asyncronous , but doent really work that well , maybe revisit it later
         //storage.upload(aClient2, FirebaseStorage::Parent(STORAGE_BUCKET_ID, firebasePath.c_str()), getFile(logFile), "text/plain", processData2, "⬆️  uploadTask");
 
+        // Retry logic
+        int attempt = 0;
+        bool uploadSuccess = false;
 
+        while (attempt < 5 && !uploadSuccess) 
+        {           
+            attempt++;
+            if(attempt > 1 ) Serial.printf("\nRetrying upload , attempt nr. %d --------------------------------\n", attempt);
 
-        // Sync call which waits until the operation complete.
-        bool status = storage.upload(aClient2, FirebaseStorage::Parent(STORAGE_BUCKET_ID, firebasePath.c_str()), getFile(logFile), "text/plain");
-        if (status)Serial.println("Upload task(await), complete!");
-        else Firebase.printf("Error, msg: %s, code: %d\n", aClient2.lastError().message().c_str(), aClient2.lastError().code());
+            Serial.printf("\nUploading file nr. %d : ", files_counter + 1 ); Serial.print(filePath);
+            Serial.print("\nFirebase Path: "); Serial.print(firebasePath);
+
+            if(entry.size() > 1000000)Serial.printf("\nFile Size: %d MB \n", int(entry.size()/1000000));//MBytes
+            else if(entry.size() > 1000)   Serial.printf("\nFile Size: %d KB \n", int(entry.size()/1000));   //KBytes
+            else Serial.printf("File Size: %d Bytes\n", entry.size()); //Bytes
+
+            
+            // Sync call which waits until the operation complete.
+            bool status = storage.upload(aClient2, FirebaseStorage::Parent(STORAGE_BUCKET_ID, firebasePath.c_str()), getFile(logFile), "text/plain");
+            if (status)
+            {
+                Serial.println("\n---- Upload task complete!");
+                uploadSuccess = true;
+                wait(1000);
+            }
+            else
+            {
+                Firebase.printf("\nError, msg: %s, code: %d\n", aClient2.lastError().message().c_str(), aClient2.lastError().code());  
+
+                // Between retry attempts, force cleanup
+                //storageResult.clear();
+                //aClient2.stopAsync();
+    
+                wait(1000);
+            }
+            
+            // Close and reopen file between attempts
+            //logFile.clear();
+            //logFile = FileConfig(filePath.c_str(), file_operation_callback2);
+        }
+
+        if (!uploadSuccess) 
+        {
+            Serial.println("\nERROR : Max retry attempts reached. Moving to next file.");
+        }
+
+        entry.close();
 
 
         /*
@@ -316,7 +362,8 @@ void uploadLogsFromSD()
         Serial.println("Uploading file...");
 
         // Async call with callback function.
-        //cstorage.upload(aClient2, GoogleCloudStorage::Parent(STORAGE_BUCKET_ID, "media.mp4"), getFile(media_file), options, processData, "⬆️  uploadTask");
+        //cstorage.upload(aClient2, GoogleCloudStorage::Parent(STORAGE_BUCKET_ID, "media.mp4"), getFile(media_file), options, pttempt nr. 2 --------------------------------
+        rocessData, "⬆️  uploadTask");
 
         // Async call with AsyncResult for returning result.
         //cstorage.upload(aClient2, GoogleCloudStorage::Parent(STORAGE_BUCKET_ID, "media.mp4"), getFile(media_file), options, cloudStorageResult);
@@ -352,5 +399,9 @@ void uploadLogsFromSD()
         */
     }
     entry = dir.openNextFile();
+    files_counter++;
   }
+  dir.close();
+
+  Serial.printf("\n ------Batch Upload Finished, Files uploaded : %d ----------------",files_counter);
 }
