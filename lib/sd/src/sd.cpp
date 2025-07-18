@@ -1341,9 +1341,6 @@ int print_sd_log_folder_content()
 
 //LATER ADD THE REGISTERED HEAVY BREAKING ETC 
 
-
-
-
 void splitFileIntoChunks(const char *originalFilePath, size_t chunkSizeBytes)
 {
   File originalFile = SD.open(originalFilePath, FILE_READ);

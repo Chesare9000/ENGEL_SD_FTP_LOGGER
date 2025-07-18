@@ -28,6 +28,7 @@
 #include <tools.h>
 #include <vars.h>
 #include <oled.h>
+#include "esp_task_wdt.h"
 
 
 
@@ -264,123 +265,8 @@ void file_operation_callback2(File &file, const char *filename, file_operating_m
 }
 
 
-void uploadLogsFromSD() 
-{ 
-  GoogleCloudStorage::UploadOptions options;
-  options.mime = "text/plain";
-  //options.uploadType = GoogleCloudStorage::upload_type_resumable;
-  options.uploadType = GoogleCloudStorage::upload_type_simple;  
-        
-  File dir = SD.open("/logs");
-  if(!dir)
-  {
-    Serial.println("Failed to open /logs directory");
-    return;
-  }
-
-  int files_counter = 0 ;
-
-  File entry = dir.openNextFile();
 
 
-  while (entry) 
-  {
-    if (!entry.isDirectory() && String(entry.name()).endsWith(".txt")) 
-    {
-        String filePath = String("/logs/"); 
-        filePath += entry.name();
-
-        String firebasePath = String("/logs/");
-        firebasePath += String(esp_id);
-        firebasePath += String("/");
-        firebasePath += entry.name();
-
-        FileConfig logFile(filePath.c_str(), file_operation_callback2);
-
-        // Retry logic
-        int attempt = 0;
-        bool uploadSuccess = false;
-
-        while (attempt < 5 && !uploadSuccess) 
-        {           
-            attempt++;
-            if(attempt > 1 ) Serial.printf("\nRetrying upload , attempt nr. %d --------------------------------\n", attempt);
-
-            Serial.printf("\nUploading file nr. %d : ", files_counter + 1 ); Serial.print(filePath);
-            Serial.print("\nFirebase Path: "); Serial.print(firebasePath);
-
-            if(entry.size() > 1000000)Serial.printf("\nFile Size: %d MB \n", int(entry.size()/1000000));//MBytes
-            else if(entry.size() > 1000)   Serial.printf("\nFile Size: %d KB \n", int(entry.size()/1000));   //KBytes
-            else Serial.printf("\nFile Size: %d Bytes\n", entry.size()); //Bytes
-
-            // REOPEN THE FILE FRESH FOR EACH ATTEMPT , so the file pointer is reset to the beginning.
-            File fresh_file = SD.open(filePath.c_str(), FILE_READ);
-            if (!fresh_file) 
-            {
-                Serial.println("\n---Error: Failed to reopen file for upload.");
-                break; // Give up on this file
-            }
-            
-
-            FileConfig logFile(filePath.c_str(), file_operation_callback2);
-
-            oled_logger_uploading(files_counter + 1 , total_files_on_sd );
-
-            // Sync call which waits until the operation complete.
-            bool status = cstorage.upload(aClient2, GoogleCloudStorage::Parent(STORAGE_BUCKET_ID,firebasePath.c_str()), getFile(logFile), options);
-            if (status)
-            {
-                Serial.println("\n---- Upload task complete!");
-                uploadSuccess = true;
-                wait(100);
-            }
-            else
-            {
-                Firebase.printf("\nError, msg: %s, code: %d\n", aClient2.lastError().message().c_str(), aClient2.lastError().code());  
-                //storageResult.clear();
-                //aClient2.stopAsync();    
-                wait(100);
-            }
-            
-            
-            /*
-            // Sync call which waits until the operation complete.
-            bool status = storage.upload(aClient2, FirebaseStorage::Parent(STORAGE_BUCKET_ID, firebasePath.c_str()), getFile(logFile), "text/plain");
-            if (status)
-            {
-                Serial.println("\n---- Upload task complete!");
-                uploadSuccess = true;
-                wait(100);
-            }
-            else
-            {
-                Firebase.printf("\nError, msg: %s, code: %d\n", aClient2.lastError().message().c_str(), aClient2.lastError().code());  
-                storageResult.clear();
-                aClient2.stopAsync();    
-                wait(100);
-            }
-
-            */
-           
-        }
-
-        if (!uploadSuccess) 
-        {
-            Serial.println("\nERROR : Max retry attempts reached. Moving to next file.");            
-        }
-
-        entry.close();
-    }
-    entry = dir.openNextFile();
-    files_counter++;
-  }
-  dir.close();
-
-  Serial.printf("\n ------Batch Upload Finished, Files uploaded : %d ----------------",files_counter);
-}
-
-
-/*
 void uploadLogsFromSD() 
 {
   GoogleCloudStorage::UploadOptions options;
@@ -471,7 +357,3 @@ void uploadLogsFromSD()
 
   
 }
-
-
-
-*/
