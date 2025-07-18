@@ -25,19 +25,24 @@ void temp_init()
 }
 
 int temp_get()
- {
-    if(!i2c_initialized)i2c_init();
+{
+  if(!i2c_initialized)i2c_init();
 
-    if(i2c_initialized)
+  if(i2c_initialized)
+  {
+    if(temp_sens.readTemperatureC() != board_temp)
     {
-      if(temp_sens.readTemperatureC() != board_temp)
-      {
-        board_temp = temp_sens.readTemperatureC();
-      }
-      return board_temp;
+      board_temp = temp_sens.readTemperatureC();
     }
+    return board_temp;
+  }
 
-    else if(log_enabled) Serial.print ("ERROR in get_temp -> I2C not init." );
+  else
+  {
+    if(log_enabled) Serial.print ("ERROR in get_temp -> I2C not init." );
+    return -1;
+  } 
+
  }
 
 void temp_update(int print)

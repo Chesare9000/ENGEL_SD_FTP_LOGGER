@@ -1344,9 +1344,110 @@ int print_sd_log_folder_content()
 
 
 
+void splitFileIntoChunks(const char *originalFilePath, size_t chunkSizeBytes)
+{
+  File originalFile = SD.open(originalFilePath, FILE_READ);
+  if (!originalFile) 
+  {
+    Serial.println("Error: Cannot open original file.");
+    return;
+  }
+
+  // Get base file name without extension
+  String fileName = String(originalFilePath);
+  fileName = fileName.substring(fileName.lastIndexOf("/") + 1); // "a.txt"
+  String baseName = fileName.substring(0, fileName.lastIndexOf(".")); // "a"
+  String ext = fileName.substring(fileName.lastIndexOf(".")); // ".txt"
+
+  size_t partNumber = 1;
+  size_t bytesWritten = 0;
+
+  String partFileName;
+  File partFile;
+
+  Serial.printf("Splitting file %s into chunks of %d bytes...\n", originalFilePath, chunkSizeBytes);
+
+  while (originalFile.available()) {
+    if (bytesWritten == 0) {
+      // Open new part file
+      partFileName = "/logs/" + baseName + "_part" + String(partNumber) + ext;
+      partFile = SD.open(partFileName.c_str(), FILE_WRITE);
+      if (!partFile) {
+        Serial.printf("Error: Could not create %s\n", partFileName.c_str());
+        break;
+      }
+      Serial.printf("Writing: %s\n", partFileName.c_str());
+    }
+
+    // Write byte-by-byte to avoid RAM usage
+    partFile.write(originalFile.read());
+    bytesWritten++;
+
+    if (bytesWritten >= chunkSizeBytes || !originalFile.available()) {
+      partFile.close();
+      Serial.printf("Finished part %d: %s (%d bytes)\n", partNumber, partFileName.c_str(), bytesWritten);
+      partNumber++;
+      bytesWritten = 0;
+    }
+  }
+
+  originalFile.close();
+  Serial.println("File split complete.");
+}
 
 
 
 
 
+void splitFileIntoChunksIfNeeded(const String &filePath, std::vector<String> &partFiles, size_t maxPartSizeBytes)
+{
+  File file = SD.open(filePath.c_str());
+  if (!file) {
+    Serial.printf("❌ Could not open file: %s\n", filePath.c_str());
+    return;
+  }
 
+  size_t totalSize = file.size();
+  if (totalSize <= maxPartSizeBytes) {
+    // No need to split
+    Serial.printf("No need to split this file : %s\n", filePath.c_str());
+    partFiles.push_back(filePath);
+    file.close();
+    return;
+  }
+
+  Serial.printf("This file needs to be split as is > 3Mb : %s\n", filePath.c_str());
+
+  String fileName = filePath.substring(filePath.lastIndexOf("/") + 1); // "big.txt"
+  String baseName = fileName.substring(0, fileName.lastIndexOf(".")); // "big"
+  String ext = fileName.substring(fileName.lastIndexOf("."));         // ".txt"
+
+  size_t partNumber = 1;
+  size_t bytesWritten = 0;
+  File partFile;
+  String partPath;
+
+  while (file.available()) {
+    if (bytesWritten == 0) {
+      partPath = "/logs/" + baseName + "_part" + String(partNumber) + ext;
+      partFile = SD.open(partPath.c_str(), FILE_WRITE);
+      if (!partFile) {
+        Serial.printf("❌ Error: Could not create %s\n", partPath.c_str());
+        break;
+      }
+    }
+
+    partFile.write(file.read());
+    bytesWritten++;
+
+    if (bytesWritten >= maxPartSizeBytes || !file.available()) {
+      partFile.close();
+      partFiles.push_back(partPath);
+      Serial.printf("✅ Created part: %s (%d bytes)\n", partPath.c_str(), bytesWritten);
+      bytesWritten = 0;
+      partNumber++;
+    }
+  }
+
+  file.close();
+}

@@ -44,7 +44,7 @@
 #define TINY_GSM_USE_GPRS true   //check later
 #define TINY_GSM_USE_WIFI false //todo check later for compatibility issues with wifi
 
-#include <ExampleFunctions.h> // Provides the functions used in the examples.
+//#include <ExampleFunctions.h> // Provides the functions used in the examples.
 
 #include <Arduino.h>
 
