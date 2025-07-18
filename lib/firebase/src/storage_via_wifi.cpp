@@ -8,14 +8,9 @@
 
 //This will work just on WIFI at the moment , later update to lte as well
 
-//#define ENABLE_USER_AUTH
-//#define ENABLE_STORAGE
-//#define ENABLE_FS
-
-#define ENABLE_SERVICE_AUTH
-#define ENABLE_CLOUD_STORAGE
+#define ENABLE_USER_AUTH
+#define ENABLE_STORAGE
 #define ENABLE_FS
-
 
 #include <FirebaseClient.h>
 //#include <ExampleFunctions.h> // Provides the functions used in the examples.
@@ -28,7 +23,6 @@
 #include <tools.h>
 #include <vars.h>
 #include <oled.h>
-#include "esp_task_wdt.h"
 
 
 
@@ -37,7 +31,7 @@
 #define firebase_api_key "AIzaSyDPxQ-3--VDEGU37vpG7FdTiweSYohak68"
 #define firebase_url "https://engel-dev-61ef3-default-rtdb.europe-west1.firebasedatabase.app/"
 #define firebase_url_for_lte "engel-dev-61ef3-default-rtdb.europe-west1.firebasedatabase.app"
-#define FIREBASE_PROJECT_ID "engel-dev-61ef3"  
+
 
 //#define WIFI_SSID "Not_Your_Hotspot"
 //#define WIFI_PASSWORD "wifirocks"
@@ -46,18 +40,18 @@
 #define WIFI_PASSWORD "cesar1234"
 
 
-//#define API_KEY firebase_api_key
-//#define USER_PASSWORD firebase_pass
+#define API_KEY firebase_api_key
+#define USER_EMAIL firebase_user
+#define USER_PASSWORD firebase_pass
 
 // Define the Firebase storage bucket ID e.g bucket-name.appspot.com */
 #define STORAGE_BUCKET_ID "engel-dev-61ef3.firebasestorage.app"
 
-#define FIREBASE_CLIENT_EMAIL "firebase-adminsdk-zoh3a@engel-dev-61ef3.iam.gserviceaccount.com"
 // Photo path in filesystem and photo path in Firebase bucket
 //#define SD_LOG_FILE_PATH "/logs/2025-07-14.txt"
 //#define BUCKET_PHOTO_PATH "/logs/15840448/2025-07-14.txt"
 
-const char PRIVATE_KEY[] PROGMEM = 	"-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCosJBMaCBaaigY\neWd1qZCz8nf9Vm8oqSOosIZBJH5z+qv8hvQT/MuRdc5MAAL9zSTjZ4fGfzgkwooL\nWVINGtcnFMt9hUuxRevy+4q1c3AgmyIv+8E0iLe/6oxPZnmIXqwAGieVRgWpiHyE\nRgTH424hDls1lkxFTxqVK/JU+6f1iGXi9M3N7uJKjAkDmoV7Sg3mfbvUbLL01F6M\nLKm/BA6q4EqQBzePVYR6tWgiLHTXXFcLEE6f0U9+UcDorEadUJQzRSpod57am03d\nvxXGGxbkxxskqRd8dKZ7yyHCMQnKNERjWNr+e+y8Qb6zhMA9CWrqEBWpHm8PzAxb\nE3Lftcr1AgMBAAECggEAM3a6bzUNOchNNzpCoBj9Nojwpm9qNkNzx5EjRFh347ZE\nJiSd7kMfb9868uDGCNw/NsltGNfTLxPSvaegarMXlKq5ci/qacjlNRoctULkoG3z\nviPWS8qyFHDgIZEn3rzTSKyyCs50B8bGBiy+ZKU0Ag25Md4KotKBT6U6p0andTaK\nv4dMYeivRGFaM+WQ4FzGV51scbpuWZg5WHZ7HDZlN3uSaGT5DciRgfudG24I53Gy\nB6GR2RRAo5OYmX9lms+uKay/6Lqxn4MFR0nWC1qRxnV+JvuWqbflI2//8iz60tUY\nnfkMXyVr+r4odNpeI+ZUOKPguUv8cb/MkhAa0OvmeQKBgQDZsEghMAeJrmtMc6YE\nleaxKq/FbIS+3ef8SmKwzQxCpBPKVCPgXu6MW4tTfq9rKXX8TcX7cgHFJ2hNP2jR\n6/xyz0+paqionxfjl+cc2RiU2Xaix5+UF38cyYr96MsW2Ftdx5Pl8OsQpEpv2RFs\n03DjbVb3MBFLvEKsYHPH7HyizwKBgQDGYLDgBYY6C9ikuy8O8Vn0h+0m5F+xqbMC\ntLfsq5QqMARg1t+o/vVogb1WITUgjbqZABSOMkPhM/RVMxwVLGH4wmNxZy0kc6Mb\neVoegK5y+UUx6R1QAjVxlRgsoWHj48ooaBJdZtzMNvmmCNdPpQ0EXQuO7T/4+X80\nXvIqGs22+wKBgQCJmsANkoHBS2ryGcyg62y3IyeW4WEMEdO6C/9UiVktqvADnqpL\nA1dBjACHV/ZlBAFb6oGyzz9FNALfiaylvcmHfXp6ujxA0shUCsqB1s2OEeTHQu6h\nuzSTqubcV9JA76TZo/XejSraCzAugYVdSE78xDoL6OuV9zwiIJovj1K9ywKBgAd5\nOxClhKIJMjc6ihJRC2eH+2o8rlI+J21Rq6Ax8poIRxHy5mgyesJeKOjmxV6dmEsN\nUrjssdv5Hhpbm5I8otBBWoe6MFwwMxPk5X1Csc/JDk9MDfumqabGzCtaRRrVyRbu\nnMqCBo13AL69lIb+m9fvPXE8BO33UFCDxzHI4rkjAoGAN5+uiqv8rRSsSzcm//9K\n3wrZd+gzEqU4JDTJvQ15he08b6D0QcQxYosHfXVZIQWwIY0boO2Zf3nRbq+2PS8T\nJjH2GWuCtLAlDBqQOD56pS67HaDdgy+tWxZsEvwlmBN10vtHC3S8Byf+F64KcQVI\nXxXNb6oqI34id10kx7Znskk=\n-----END PRIVATE KEY-----\n";
+//const char PRIVATE_KEY[] PROGMEM = "-----BEGIN PRIVATE KEY-----X8d45ef470eccb5b9e0823187d87656d00793bf43-----END PRIVATE KEY-----\n";
 
 // User functions
 void processData2(AsyncResult &aResult);
@@ -66,7 +60,7 @@ void file_operation_callback2(File &file, const char *filename, file_operating_m
 //bool upload_completed = false;
 
 // ServiceAuth is required for Google Cloud Functions functions.
-ServiceAuth sa_auth2(FIREBASE_CLIENT_EMAIL, FIREBASE_PROJECT_ID , PRIVATE_KEY, 3000 /* expire period in seconds (<= 3600) */);
+//ServiceAuth sa_auth(USER_EMAIL, "engel-dev-61ef3", PRIVATE_KEY, 3000 /* expire period in seconds (<= 3600) */);
 
 //FileConfig media_file(SD_LOG_FILE_PATH, file_operation_callback2); // Can be set later with media_file.setFile("/image.png", file_operation_callback2);
 
@@ -76,7 +70,7 @@ File myFile;
 int total_files_on_sd = 0;
 
 // Authentication
-//UserAuth user_auth2(API_KEY, USER_EMAIL, USER_PASSWORD, 3000 /* expire period in seconds (<3600) */);
+UserAuth user_auth2(API_KEY, USER_EMAIL, USER_PASSWORD, 3000 /* expire period in seconds (<3600) */);
 
 // Firebase components
 FirebaseApp app2;
@@ -87,42 +81,16 @@ WiFiClientSecure ssl_client2;
 using AsyncClient = AsyncClientClass;
 AsyncClient aClient2(ssl_client2);
 
-CloudStorage cstorage;
+//CloudStorage cstorage;
 
-//Storage storage;
+Storage storage;
 
 bool taskComplete = false;
 
 bool firebasse_file_initialized = false;
 
-AsyncResult cloudStorageResult;
-//AsyncResult storageResult;
-
-
-// Function to get NTP server time.
-uint32_t get_ntp_time()
-{
-    uint32_t ts = 0;
-    Serial.print("Getting time from NTP server... ");
-
-    int max_try = 10, retry = 0;
-    while (time(nullptr) < FIREBASE_DEFAULT_TS && retry < max_try)
-    {
-        configTime(3 * 3600, 0, "pool.ntp.org");
-        unsigned long m = millis();
-        while (time(nullptr) < FIREBASE_DEFAULT_TS && millis() - m < 10 * 1000)
-        {
-            delay(100);
-            ts = time(nullptr);
-        }
-        Serial.print(ts == 0 ? " failed, retry... " : "");
-        retry++;
-    }
-    ts = time(nullptr);
-
-    Serial.println(ts > 0 ? "success" : "failed");
-    return ts;
-}
+//AsyncResult cloudStorageResult;
+AsyncResult storageResult;
 
 void processData2(AsyncResult &aResult)
 {
@@ -187,21 +155,20 @@ bool firebase_file_init()
     ssl_client2.setInsecure();
     ssl_client2.setTimeout(5000);
     ssl_client2.setHandshakeTimeout(5);
-
+    
     //set_ssl_client_insecure_and_buffer(ssl_client2);
 
     // Assign the valid time only required for authentication process with ServiceAuth and CustomAuth.
-    app2.setTime(get_ntp_time());
+    //app2.setTime(get_ntp_time());
 
     Serial.println("Initializing app2...");
-    initializeApp(aClient2, app2, getAuth(sa_auth2), processData2, "authTask");
-    //initializeApp(aClient2, app2, getAuth(user_auth2), processData2, "authTask");
+    initializeApp(aClient2, app2, getAuth(user_auth2), processData2, "authTask");
 
-    app2.getApp<CloudStorage>(cstorage);
+    //app2.getApp<CloudStorage>(cstorage);
     // Or intialize the app and wait.
     // initializeApp(aClient, app, getAuth(user_auth), 120 * 1000, auth_debug_print);
 
-    //app2.getApp<Storage>(storage);
+    app2.getApp<Storage>(storage);
 
     total_files_on_sd = print_sd_log_folder_content();
 
@@ -266,13 +233,8 @@ void file_operation_callback2(File &file, const char *filename, file_operating_m
 
 
 
-
 void uploadLogsFromSD() 
 {
-  GoogleCloudStorage::UploadOptions options;
-  options.mime = "text/plain";
-  options.uploadType = GoogleCloudStorage::upload_type_resumable;
-
   File dir = SD.open("/logs");
   if (!dir) 
   {
@@ -289,6 +251,8 @@ void uploadLogsFromSD()
     {
       String filePath = String("/logs/") + entry.name();
       std::vector<String> partFiles;
+
+      String mimeType = "text/plain";
 
       splitFileIntoChunksIfNeeded(filePath, partFiles);
 
@@ -318,25 +282,30 @@ void uploadLogsFromSD()
 
           Serial.printf("\nUploading file: %s\nFirebase Path: %s\n", partPath.c_str(), firebasePath.c_str());
 
-          bool status = cstorage.upload(aClient2, GoogleCloudStorage::Parent(STORAGE_BUCKET_ID, firebasePath.c_str()), getFile(logFile), options);
+          bool status = storage.upload(aClient2, FirebaseStorage::Parent(STORAGE_BUCKET_ID, firebasePath.c_str()), getFile(logFile), mimeType);
+          
           if (status) 
           {
-            Serial.println("✅ Upload complete!");
-            uploadSuccess = true;
-
-            // If it's a chunk (not original), delete after upload
-            if (partPath.indexOf("_part") != -1) 
+            if (aClient2.lastError().code() == 0) 
             {
-              SD.remove(partPath.c_str());
-              Serial.printf("🧹 Deleted chunk file: %s\n", partPath.c_str());
-            }
+                Serial.println("✅ Upload complete!");
+                uploadSuccess = true;
 
-            wait(100);
+                // Only delete if Firebase confirms full size upload
+                if (partPath.indexOf("_part") != -1) 
+                {
+                    SD.remove(partPath.c_str());
+                    Serial.printf("🧹 Deleted chunk file: %s\n", partPath.c_str());
+                }
+            } 
+            else 
+            {
+                Serial.printf("⚠️ Upload reported success but had error: %s\n", aClient2.lastError().message().c_str());
+            }
           } 
           else 
           {
             Firebase.printf("❌ Upload failed. Msg: %s, Code: %d\n", aClient2.lastError().message().c_str(), aClient2.lastError().code());
-            wait(100);
           }
         }
 
@@ -355,5 +324,4 @@ void uploadLogsFromSD()
   dir.close();
   Serial.printf("🟢 Finished uploading all log files.\n");
 
-  
 }
