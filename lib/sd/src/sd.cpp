@@ -1376,7 +1376,7 @@ void splitFileIntoChunksIfNeeded(const String &filePath, std::vector<String> &pa
         Serial.println("⚠️ Could not open /logs directory for cleanup.");
     }
 
-    // 🟢 Proceed with regular splitting logic
+    // 🟢 Step 2: Begin splitting logic
     File file = SD.open(filePath.c_str());
     if (!file) 
     {
@@ -1387,7 +1387,7 @@ void splitFileIntoChunksIfNeeded(const String &filePath, std::vector<String> &pa
     size_t totalSize = file.size();
     if (totalSize <= maxPartSizeBytes) 
     {
-        Serial.printf("\n %s is less than 2MB -> uploading directly .... \n", filePath.c_str());
+        Serial.printf("\n✅ %s is less than threshold -> uploading directly.\n", filePath.c_str());
         partFiles.push_back(filePath);
         file.close();
         return;
@@ -1400,14 +1400,9 @@ void splitFileIntoChunksIfNeeded(const String &filePath, std::vector<String> &pa
     Serial.printf("\n📦 File: %s is %.2f MB —> larger than %.2f MB threshold.\nFile will be split into %d parts.\n",
                 filePath.c_str(), totalSizeMB, thresholdMB, estimatedParts);
 
-    //Serial.printf("\n %s needs to be split as it's > %d MB \n", filePath.c_str(), int(maxPartSizeBytes / 1000000));
-
     String fileName = filePath.substring(filePath.lastIndexOf("/") + 1);
     String baseName = fileName.substring(0, fileName.lastIndexOf("."));
     String ext = fileName.substring(fileName.lastIndexOf("."));
-
-    const size_t bufferSize = 1024;
-    uint8_t buffer[bufferSize];
 
     size_t partNumber = 1;
     size_t bytesWritten = 0;
@@ -1419,9 +1414,8 @@ void splitFileIntoChunksIfNeeded(const String &filePath, std::vector<String> &pa
     while (file.available()) 
     {
         String line = file.readStringUntil('\n');
-        size_t lineSize = line.length() + 1; // Include newline character
+        size_t lineSize = line.length() + 1; // +1 for newline
 
-        // Create new part file if this is a new part or will exceed limit
         if (bytesWritten + lineSize > maxPartSizeBytes || !partFile) 
         {
             if (partFile) 
@@ -1445,7 +1439,7 @@ void splitFileIntoChunksIfNeeded(const String &filePath, std::vector<String> &pa
             partNumber++;
         }
 
-        partFile.println(line);
+        partFile.print(line + "\n");
         bytesWritten += lineSize;
 
         if (millis() > timer + 1000) 
@@ -1455,6 +1449,7 @@ void splitFileIntoChunksIfNeeded(const String &filePath, std::vector<String> &pa
         }
     }
 
+    // Close the last open part
     if (partFile) 
     {
         partFile.close();
@@ -1463,7 +1458,7 @@ void splitFileIntoChunksIfNeeded(const String &filePath, std::vector<String> &pa
 
     file.close();
 
-    // ✅ Now rename with total part info
+    // 🔁 Rename files to include "_of_X"
     size_t totalParts = tempPaths.size();
 
     for (size_t i = 0; i < totalParts; ++i)
