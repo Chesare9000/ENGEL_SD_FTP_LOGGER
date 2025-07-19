@@ -1343,7 +1343,7 @@ int print_sd_log_folder_content()
 //LATER ADD THE REGISTERED HEAVY BREAKING ETC 
 
 
-void splitFileIntoChunksIfNeeded(const String &filePath, std::vector<String> &partFiles, size_t maxPartSizeBytes)
+void splitFileIntoChunksIfNeeded(const String &filePath, std::vector<String> &partFiles, size_t maxPartSizeBytes, const std::set<String> &existingRemoteFiles)
 {
     // 🧹 Step 1: Clean up all leftover chunk files before splitting
     File logDir = SD.open("/logs");
@@ -1424,6 +1424,18 @@ void splitFileIntoChunksIfNeeded(const String &filePath, std::vector<String> &pa
                 Serial.printf("\n✅ Created part: %s (%d bytes)\n", tempPaths.back().c_str(), bytesWritten);
             }
 
+            // Predict final renamed chunk name
+            String numberedPartName = baseName + "_part" + String(partNumber) + "_of_" + String(estimatedParts) + ext;
+
+            if (existingRemoteFiles.find(numberedPartName) != existingRemoteFiles.end()) 
+            {
+                Serial.printf("✅ Skipping chunk already on server: %s\n", numberedPartName.c_str());
+                partFile = File(); // Set to invalid
+                partNumber++;
+                bytesWritten = 0;
+                continue;
+            }
+
             String tempPartPath = "/logs/" + baseName + "_part" + String(partNumber) + ext;
             Serial.printf("\n✅ Creating %s \n", tempPartPath.c_str());
             partFile = SD.open(tempPartPath.c_str(), FILE_WRITE);
@@ -1439,8 +1451,12 @@ void splitFileIntoChunksIfNeeded(const String &filePath, std::vector<String> &pa
             partNumber++;
         }
 
-        partFile.print(line + "\n");
-        bytesWritten += lineSize;
+        // Only write if partFile is open (not skipped)
+        if (partFile) 
+        {
+            partFile.print(line + "\n");
+            bytesWritten += lineSize;
+        }
 
         if (millis() > timer + 1000) 
         {
@@ -1466,6 +1482,13 @@ void splitFileIntoChunksIfNeeded(const String &filePath, std::vector<String> &pa
         String oldPath = tempPaths[i];
         String numberedPartName = baseName + "_part" + String(i + 1) + "_of_" + String(totalParts) + ext;
         String newPath = "/logs/" + numberedPartName;
+
+        if (existingRemoteFiles.find(numberedPartName) != existingRemoteFiles.end()) 
+        {
+            Serial.printf("✅ Chunk already uploaded — deleting local: %s\n", oldPath.c_str());
+            SD.remove(oldPath.c_str());  // Don't rename, delete temp
+            continue;
+        }
 
         if (SD.exists(newPath.c_str())) 
         {

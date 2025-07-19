@@ -269,9 +269,9 @@ bool getExistingFilesFromStorage(const String &subFolderPath, std::set<String> &
             if (filename.endsWith(".tx")) 
             {
                 filename += "t";
-                Serial.printf("⚠️ Firebase bug fix applied: renamed '%s' to '%s'\n", 
-                              fullPath.substring(fullPath.lastIndexOf("/") + 1).c_str(), 
-                              filename.c_str());
+                //Serial.printf("⚠️ Firebase bug fix applied: renamed '%s' to '%s'\n", 
+                //              fullPath.substring(fullPath.lastIndexOf("/") + 1).c_str(), 
+                //              filename.c_str());
             }
             existingFiles.insert(filename);
         }
@@ -327,7 +327,7 @@ void uploadLogsFromSD()
 
       String mimeType = "text/plain";
 
-      splitFileIntoChunksIfNeeded(filePath, partFiles);
+      splitFileIntoChunksIfNeeded(filePath, partFiles, 2100000, existingRemoteFiles);
 
       buzzer_quick_alert();
 
