@@ -1404,55 +1404,58 @@ void splitFileIntoChunksIfNeeded(
     File partFile;
     unsigned long timer = millis();
 
+    size_t partIndex = 1;
+    size_t drained = 0;
+
     while (inputFile.available()) 
     {
-        String partFileName = baseName + "_part" + String(partNumber) + "_of_" + String(totalParts) + ext;
-        String fullPartPath = "/logs/" + partFileName;
+        // Build the part name before doing anything else
+        String partName = baseName + "_part" + String(partIndex) + "_of_" + String(totalParts) + ext;
 
-        // ⏩ Skip if already uploaded
-        if (existingRemoteFiles.find(partFileName) != existingRemoteFiles.end()) 
+        if (existingRemoteFiles.find(partName) != existingRemoteFiles.end()) 
         {
-            Serial.printf("✅ Skipping chunk already uploaded: %s\n", partFileName.c_str());
-            // Drain chunk from original file
-            size_t drained = 0;
-            while (inputFile.available() && drained < maxPartSizeBytes) 
+            Serial.printf("✅ Skipping chunk already uploaded: %s\n", partName.c_str());
+
+            // Efficient skip without creating a file
+            char tempBuf[512];
+            size_t skipped = 0;
+            while (inputFile.available() && skipped < maxPartSizeBytes) 
             {
-                String line = inputFile.readStringUntil('\n');
-                drained += line.length() + 1;
+                size_t len = inputFile.readBytesUntil('\n', tempBuf, sizeof(tempBuf));
+                skipped += len + 1;  // newline
             }
-            partNumber++;
+
+            partIndex++;
             continue;
         }
 
-        // 📝 Write chunk directly with final name
-        partFile = SD.open(fullPartPath.c_str(), FILE_WRITE);
+        // 🔽 Create part file and write
+        String tempPath = "/logs/" + baseName + "_part" + String(partIndex) + ext;
+        File partFile = SD.open(tempPath, FILE_WRITE);
         if (!partFile) 
         {
-            Serial.printf("❌ Failed to create chunk: %s\n", fullPartPath.c_str());
+            Serial.printf("❌ Could not create: %s\n", tempPath.c_str());
             break;
         }
 
-        Serial.printf("✍️  Writing chunk: %s\n", fullPartPath.c_str());
-        bytesWritten = 0;
-
-        while (inputFile.available() && bytesWritten < maxPartSizeBytes) 
+        size_t written = 0;
+        while (inputFile.available() && written < maxPartSizeBytes) 
         {
             String line = inputFile.readStringUntil('\n');
             partFile.print(line + "\n");
-            bytesWritten += line.length() + 1;
-
-            if (millis() > timer + 1000) 
-            {
-                Serial.print(".");
-                timer = millis();
-            }
+            written += line.length() + 1;
         }
 
         partFile.close();
-        partFiles.push_back(fullPartPath);
-        Serial.printf("\n✅ Finished chunk %d (%0.2f KB)\n", partNumber, float(bytesWritten) / 1000.0);
+        Serial.printf("✅ Created chunk: %s (%.2f KB)\n", tempPath.c_str(), written / 1000.0);
 
-        partNumber++;
+        // ✅ Rename
+        String finalPath = "/logs/" + partName;
+        if (SD.exists(finalPath)) SD.remove(finalPath);
+        SD.rename(tempPath, finalPath);
+        partFiles.push_back(finalPath);
+
+        partIndex++;
     }
 
     inputFile.close();
