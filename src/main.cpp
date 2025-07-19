@@ -224,7 +224,7 @@ void setup()
 
 
         if(!firebasse_file_initialized) firebase_file_init();
-       /*
+       
         if(!task_logger_sd_ftp_running)
         {
             Serial.print("--\nRunning task_logger_sd_ftp Initialization Order"); 
@@ -237,7 +237,7 @@ void setup()
             create_task_logger_sd_ftp();
             wait(1000);
         }
-        */
+       
             
 	}
 
