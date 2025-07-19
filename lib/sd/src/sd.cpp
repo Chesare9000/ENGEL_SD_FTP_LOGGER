@@ -1421,7 +1421,7 @@ void splitFileIntoChunksIfNeeded(const String &filePath, std::vector<String> &pa
             if (partFile) 
             {
                 partFile.close();
-                Serial.printf("\n✅ Created part: %s (%d bytes)\n", tempPaths.back().c_str(), bytesWritten);
+                Serial.printf("\n✅ Created part: %s (%f MB)\n", tempPaths.back().c_str(),float(bytesWritten/1000.0));
             }
 
             // Predict final renamed chunk name
@@ -1469,7 +1469,7 @@ void splitFileIntoChunksIfNeeded(const String &filePath, std::vector<String> &pa
     if (partFile) 
     {
         partFile.close();
-        Serial.printf("\n✅ Created part: %s (%d bytes)\n", tempPaths.back().c_str(), bytesWritten);
+        Serial.printf("\n✅ Created part: %s (%f MB)\n", tempPaths.back().c_str(), float(bytesWritten/1000));
     }
 
     file.close();
