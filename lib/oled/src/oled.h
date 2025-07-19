@@ -115,3 +115,4 @@ void oled_dev_info(int screen_nr);
 
 
 void oled_logger_uploading(int current , int total );
+void oled_logger_separating(int part);

@@ -10,6 +10,7 @@
 #include <tools.h>
 #include <imu.h>
 #include <WiFi.h>
+#include <oled.h>
 
 
 //Setting correct pins to the SD
@@ -1330,7 +1331,7 @@ int print_sd_log_folder_content()
         }
         file = dir.openNextFile();
     }    
-    Serial.printf("\n---Total Files : %d ", total_files );
+    Serial.printf("\n---Total Files : %d \n", total_files );
 
     return total_files;
 }
@@ -1344,6 +1345,38 @@ int print_sd_log_folder_content()
 
 void splitFileIntoChunksIfNeeded(const String &filePath, std::vector<String> &partFiles, size_t maxPartSizeBytes)
 {
+    // 🧹 Step 1: Clean up all leftover chunk files before splitting
+    File logDir = SD.open("/logs");
+    if (logDir && logDir.isDirectory()) 
+    {
+        File entry = logDir.openNextFile();
+        while (entry) 
+        {
+            String name = entry.name();  // e.g., "2025-07-04_part1.txt"
+            bool isTxt = name.endsWith(".txt");
+            bool isRenamedPart = name.indexOf("_part") != -1 && name.indexOf("_of_") != -1;
+            bool isRawPart = name.indexOf("_part") != -1 && name.indexOf("_of_") == -1;
+
+            if (!entry.isDirectory() && isTxt && (isRenamedPart || isRawPart)) 
+            {
+                String fullPath = "/logs/" + name;
+                Serial.printf("🧹 Removing leftover chunk: %s\n", name.c_str());
+                if (!SD.remove(fullPath.c_str()))
+                {
+                    Serial.printf("❌ Failed to delete: %s\n", fullPath.c_str());
+                }
+            }
+
+            entry = logDir.openNextFile();
+        }
+        logDir.close();
+    } 
+    else 
+    {
+        Serial.println("⚠️ Could not open /logs directory for cleanup.");
+    }
+
+    // 🟢 Proceed with regular splitting logic
     File file = SD.open(filePath.c_str());
     if (!file) 
     {
@@ -1360,56 +1393,100 @@ void splitFileIntoChunksIfNeeded(const String &filePath, std::vector<String> &pa
         return;
     }
 
-    Serial.printf("\n %s needs to be split as it's > %d bytes \n", filePath.c_str(), maxPartSizeBytes);
+    float totalSizeMB = float(totalSize) / 1000000.0;
+    float thresholdMB = float(maxPartSizeBytes) / 1000000.0;
+    size_t estimatedParts = (totalSize + maxPartSizeBytes - 1) / maxPartSizeBytes;
+
+    Serial.printf("\n📦 File: %s is %.2f MB —> larger than %.2f MB threshold.\nFile will be split into %d parts.\n",
+                filePath.c_str(), totalSizeMB, thresholdMB, estimatedParts);
+
+    //Serial.printf("\n %s needs to be split as it's > %d MB \n", filePath.c_str(), int(maxPartSizeBytes / 1000000));
 
     String fileName = filePath.substring(filePath.lastIndexOf("/") + 1);
     String baseName = fileName.substring(0, fileName.lastIndexOf("."));
     String ext = fileName.substring(fileName.lastIndexOf("."));
 
-    const size_t bufferSize = 1024; // 1KB buffer (increase if you have enough RAM)
+    const size_t bufferSize = 1024;
     uint8_t buffer[bufferSize];
 
     size_t partNumber = 1;
     size_t bytesWritten = 0;
     File partFile;
-    String partPath;
+    std::vector<String> tempPaths;
 
     unsigned long timer = millis();
 
     while (file.available()) 
     {
-        if (bytesWritten == 0) 
+        String line = file.readStringUntil('\n');
+        size_t lineSize = line.length() + 1; // Include newline character
+
+        // Create new part file if this is a new part or will exceed limit
+        if (bytesWritten + lineSize > maxPartSizeBytes || !partFile) 
         {
-            partPath = "/logs/" + baseName + "_part" + String(partNumber) + ext;
-            Serial.printf("\n✅ Creating %s \n", partPath.c_str());
-            partFile = SD.open(partPath.c_str(), FILE_WRITE);
+            if (partFile) 
+            {
+                partFile.close();
+                Serial.printf("\n✅ Created part: %s (%d bytes)\n", tempPaths.back().c_str(), bytesWritten);
+            }
+
+            String tempPartPath = "/logs/" + baseName + "_part" + String(partNumber) + ext;
+            Serial.printf("\n✅ Creating %s \n", tempPartPath.c_str());
+            partFile = SD.open(tempPartPath.c_str(), FILE_WRITE);
             if (!partFile) 
             {
-                Serial.printf("\n❌ Error: Could not create %s\n", partPath.c_str());
+                Serial.printf("\n❌ Error: Could not create %s\n", tempPartPath.c_str());
                 break;
             }
+
+            tempPaths.push_back(tempPartPath);
+            oled_logger_separating(partNumber);
+            bytesWritten = 0;
+            partNumber++;
         }
 
-        size_t toRead = min(bufferSize, maxPartSizeBytes - bytesWritten);
-        size_t actualRead = file.readBytes((char *)buffer, toRead);
-        partFile.write(buffer, actualRead);
-        bytesWritten += actualRead;
+        partFile.println(line);
+        bytesWritten += lineSize;
 
         if (millis() > timer + 1000) 
         {
             Serial.print(".");
             timer = millis();
         }
+    }
 
-        if (bytesWritten >= maxPartSizeBytes || !file.available()) 
-        {
-            partFile.close();
-            partFiles.push_back(partPath);
-            Serial.printf("\n✅ Created part: %s (%d bytes)\n", partPath.c_str(), bytesWritten);
-            bytesWritten = 0;
-            partNumber++;
-        }
+    if (partFile) 
+    {
+        partFile.close();
+        Serial.printf("\n✅ Created part: %s (%d bytes)\n", tempPaths.back().c_str(), bytesWritten);
     }
 
     file.close();
+
+    // ✅ Now rename with total part info
+    size_t totalParts = tempPaths.size();
+
+    for (size_t i = 0; i < totalParts; ++i)
+    {
+        String oldPath = tempPaths[i];
+        String numberedPartName = baseName + "_part" + String(i + 1) + "_of_" + String(totalParts) + ext;
+        String newPath = "/logs/" + numberedPartName;
+
+        if (SD.exists(newPath.c_str())) 
+        {
+            Serial.printf("⚠️ File already exists — deleting before rename: %s\n", newPath.c_str());
+            SD.remove(newPath.c_str());
+        }
+
+        if (SD.rename(oldPath.c_str(), newPath.c_str())) 
+        {
+            partFiles.push_back(newPath);
+            Serial.printf("🔁 Renamed %s -> %s\n", oldPath.c_str(), newPath.c_str());
+        } 
+        else 
+        {
+            Serial.printf("❌ Failed to rename %s -> %s\n", oldPath.c_str(), newPath.c_str());
+            partFiles.push_back(oldPath);
+        }
+    }
 }

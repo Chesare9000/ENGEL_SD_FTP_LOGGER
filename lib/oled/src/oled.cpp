@@ -793,6 +793,38 @@ void oled_logger_uploading(int current , int total )
     oled_needs_refresh = true;
 } 
 
+void oled_logger_separating(int part)
+{
+    //Eliminate any previous value for the oled
+    oled.clearBuffer();
+
+    //DEVEL MODE
+    oled.drawStr(0,10,"ENGEL_V4");
+    oled.drawStr(0,20,"LOGGER");
+
+  
+    oled.setCursor(0,50);
+    oled.printf("SEPARATING");
+
+    oled.setCursor(0,60);
+    oled.printf("FILE");
+
+    oled.setCursor(0,80);
+    oled.print("EXTRACTING");   
+
+    oled.setCursor(0,90);
+    oled.printf("PART");
+
+    oled.setCursor(0,100);
+    oled.print(part);
+
+   //Will refresh when possible
+    oled_needs_refresh = true;
+} 
+
+
+
+
 
 
 

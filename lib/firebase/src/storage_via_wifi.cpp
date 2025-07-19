@@ -13,6 +13,7 @@
 #define ENABLE_FS
 
 #include <FirebaseClient.h>
+#include <set>
 //#include <ExampleFunctions.h> // Provides the functions used in the examples.
 
 #include <wifi.h>
@@ -23,8 +24,7 @@
 #include <tools.h>
 #include <vars.h>
 #include <oled.h>
-
-
+#include <buzzer.h>
 
 #define firebase_user "cesar.gc@outlook.com"
 #define firebase_pass "firebase"   
@@ -147,7 +147,7 @@ bool firebase_file_init()
         }
     } 
 
-    
+    Serial.println("\n---Initializing Firebase---\n");    
     
     Firebase.printf("Firebase Client v%s\n", FIREBASE_CLIENT_VERSION);
 
@@ -232,6 +232,58 @@ void file_operation_callback2(File &file, const char *filename, file_operating_m
 }
 
 
+bool getExistingFilesFromStorage(const String &subFolderPath, std::set<String> &existingFiles)
+{
+    Serial.println("🗂 Getting full root list from Firebase Storage...");
+    String result = storage.list(aClient2, FirebaseStorage::Parent(STORAGE_BUCKET_ID));
+
+    if (aClient2.lastError().code() != 0)
+    {
+        Serial.printf("❌ Failed to list. Msg: %s, Code: %d\n", aClient2.lastError().message().c_str(), aClient2.lastError().code());
+        return false;
+    }
+
+    Serial.printf("🔍 Filtering files under: %s\n", subFolderPath.c_str());
+
+    // Parse line-by-line and filter by subfolder
+    int idx = 0;
+    while (true)
+    {
+        idx = result.indexOf("\"name\":", idx);
+        if (idx == -1)
+            break;
+
+        idx = result.indexOf("\"", idx + 7); // first quote after "name":
+        int endIdx = result.indexOf("\"", idx + 1);
+        if (endIdx == -1)
+            break;
+
+        String fullPath = result.substring(idx + 1, endIdx); // e.g., logs/7801764/2025-07-04_part1.tx
+
+        // Only consider files inside the subFolderPath
+        if (fullPath.startsWith(subFolderPath))
+        {
+            String filename = fullPath.substring(fullPath.lastIndexOf("/") + 1);
+
+            // ✅ Fix Firebase bug: .tx → .txt
+            if (filename.endsWith(".tx")) 
+            {
+                filename += "t";
+                Serial.printf("⚠️ Firebase bug fix applied: renamed '%s' to '%s'\n", 
+                              fullPath.substring(fullPath.lastIndexOf("/") + 1).c_str(), 
+                              filename.c_str());
+            }
+            existingFiles.insert(filename);
+        }
+
+        idx = endIdx + 1;
+    }
+
+    Serial.printf("✅ Found %d existing files under '%s'\n", existingFiles.size(), subFolderPath.c_str());
+    return true;
+}
+
+
 
 void uploadLogsFromSD() 
 {
@@ -239,11 +291,32 @@ void uploadLogsFromSD()
   if (!dir) 
   {
     Serial.println("Failed to open /logs directory");
+    buzzer_error();
+    wait(2000);
+    Serial.println("----- Restarting ESP due to upload error");
+    wait(2000); 
+    //Upon Faiure will just restart everything to avoid being stuck
+    ESP.restart();
     return;
+  }
+
+  std::set<String> existingRemoteFiles;
+  String remoteFolder = "logs/" + String(esp_id);
+
+  if (!getExistingFilesFromStorage(remoteFolder, existingRemoteFiles))
+  {
+      Serial.println("⚠️ Skipping remote check due to error...");
+      wait(2000);
+      Serial.println("----- Restarting ESP due to upload error");
+      wait(2000); 
+      //Upon Faiure will just restart everything to avoid being stuck
+      ESP.restart();
   }
 
   File entry = dir.openNextFile();
   int fileCounter = 0;
+
+  buzzer_notification();
 
   while (entry) 
   {
@@ -256,13 +329,30 @@ void uploadLogsFromSD()
 
       splitFileIntoChunksIfNeeded(filePath, partFiles);
 
+      buzzer_quick_alert();
+
       for (size_t i = 0; i < partFiles.size(); i++) 
       {
         String partPath = partFiles[i];
+
+        String partFileName = partPath.substring(partPath.lastIndexOf("/") + 1);
+
+        if (existingRemoteFiles.find(partFileName) != existingRemoteFiles.end())
+        {
+            Serial.printf("✅ File already exists — skipping upload: %s\n", partFileName.c_str());
+            continue;
+        }
+        
+        else
+        {
+          Serial.printf("\n---File: %s not found on Storage , uploading ---\n", partFileName.c_str());
+        }
+
         String firebasePath = String("/logs/") + esp_id + "/" + partPath.substring(partPath.lastIndexOf("/") + 1);
 
         FileConfig logFile(partPath.c_str(), file_operation_callback2);
         bool uploadSuccess = false;
+
         int attempt = 0;
 
         while (attempt < 5 && !uploadSuccess) 
@@ -274,13 +364,16 @@ void uploadLogsFromSD()
           if (!freshFile) 
           {
             Serial.printf("❌ Failed to reopen %s\n", partPath.c_str());
+            buzzer_error();
             break;
           }
           freshFile.close(); // just to check availability
 
-          oled_logger_uploading(fileCounter + 1, total_files_on_sd);
+          oled_logger_uploading(i + 1, partFiles.size());
 
-          Serial.printf("\nUploading file: %s\nFirebase Path: %s\n", partPath.c_str(), firebasePath.c_str());
+          //oled_logger_uploading(fileCounter + 1, total_files_on_sd);
+
+          Serial.printf("Uploading file: %s\nFirebase Path: %s\n", partPath.c_str(), firebasePath.c_str());
 
           bool status = storage.upload(aClient2, FirebaseStorage::Parent(STORAGE_BUCKET_ID, firebasePath.c_str()), getFile(logFile), mimeType);
           
@@ -290,6 +383,8 @@ void uploadLogsFromSD()
             {
                 Serial.println("✅ Upload complete!");
                 uploadSuccess = true;
+
+                buzzer_ok();
 
                 // Only delete if Firebase confirms full size upload
                 if (partPath.indexOf("_part") != -1) 
@@ -301,27 +396,66 @@ void uploadLogsFromSD()
             else 
             {
                 Serial.printf("⚠️ Upload reported success but had error: %s\n", aClient2.lastError().message().c_str());
+               
+                buzzer_attention();
+
+                wait(5000);
+
+                if(attempt > 3)
+                {
+                  buzzer_error();
+                  SD.remove(partPath.c_str());
+                  Serial.printf("🧹 Deleted chunk file: %s\n", partPath.c_str()); 
+                  
+                  wait(2000);
+                  Serial.println("----- Restarting ESP due to upload error");
+                  wait(2000); 
+                  //Upon Faiure will just restart everything to avoid being stuck
+                  ESP.restart();
+                }
             }
           } 
           else 
           {
             Firebase.printf("❌ Upload failed. Msg: %s, Code: %d\n", aClient2.lastError().message().c_str(), aClient2.lastError().code());
+            buzzer_attention();  
+
+            wait(5000);
+
+            if(attempt > 3 )
+            {
+              buzzer_error();
+
+              SD.remove(partPath.c_str());
+              Serial.printf("🧹 Deleted chunk file: %s\n", partPath.c_str());
+
+              wait(2000);
+              Serial.println("----- Restarting ESP due to upload error");
+              wait(2000); 
+              //Upon Faiure will just restart everything to avoid being stuck
+              ESP.restart();
+
+            }
           }
         }
 
         if (!uploadSuccess) 
         {
+          //Wil never arrive here in principle , TODO maybe later improve error handling
           Serial.printf("🚫 Failed to upload %s after retries.\n", partPath.c_str());
+          buzzer_error();
         }
 
+        //Continuing even after fail 
+        //TODO maybe just continue if succeeded?
         fileCounter++;
       }
     }
-
     entry = dir.openNextFile();
   }
 
   dir.close();
   Serial.printf("🟢 Finished uploading all log files.\n");
-
+  buzzer_success();
 }
+

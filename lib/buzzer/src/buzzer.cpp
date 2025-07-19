@@ -651,6 +651,122 @@ void buzzer_alarm()
   wait(10);
 }
 
+
+
+
+// Buzzer Functions - Short Audible Feedback
+// ----------------------------------------
+// Ultra-short clicks (1-20ms)
+void buzzer_heartbeat_short_click() {
+  ledcWriteTone(BUZZER_PWM_CHANNEL, NOTE_B7); // 3951 Hz (sharp & short)
+  wait(5); // 5ms pulse (barely audible "tick")
+  ledcWrite(BUZZER_PWM_CHANNEL, 0);
+}
+
+void buzzer_heartbeat_tick() {
+  ledcWriteTone(BUZZER_PWM_CHANNEL, NOTE_FS6); // 1480 Hz
+  wait(10); // 10ms pulse
+  ledcWrite(BUZZER_PWM_CHANNEL, 0);
+}
+
+void buzzer_drive_click() {
+  ledcWriteTone(BUZZER_PWM_CHANNEL, NOTE_C7); // 2093 Hz
+  wait(5); // First click
+  ledcWrite(BUZZER_PWM_CHANNEL, 0);
+  wait(95); // Pause (100ms total cycle)
+  ledcWriteTone(BUZZER_PWM_CHANNEL, NOTE_E7); // 2637 Hz
+  wait(5); // Second click
+  ledcWrite(BUZZER_PWM_CHANNEL, 0);
+}
+
+// Short beeps (20-100ms)
+void buzzer_sonar_ping() {
+  ledcWriteTone(BUZZER_PWM_CHANNEL, NOTE_A6); // 1760 Hz
+  wait(20); // Short beep
+  ledcWrite(BUZZER_PWM_CHANNEL, 0);
+}
+
+void buzzer_status_ping() {
+  ledcWriteTone(BUZZER_PWM_CHANNEL, NOTE_A5); // 880 Hz
+  wait(100); // 100ms beep
+  ledcWrite(BUZZER_PWM_CHANNEL, 0);
+}
+
+// Functional confirmations (50-100ms)
+void buzzer_function_done() {
+  ledcWriteTone(BUZZER_PWM_CHANNEL, NOTE_E6); // 1319 Hz
+  wait(50); // 50ms pulse
+  ledcWrite(BUZZER_PWM_CHANNEL, 0);
+}
+
+void buzzer_heartbeat() {
+  ledcWriteTone(BUZZER_PWM_CHANNEL, NOTE_C7); // 2093 Hz
+  wait(100); // 100ms beep
+  ledcWrite(BUZZER_PWM_CHANNEL, 0);
+}
+
+// Multi-tone alerts
+void buzzer_quick_alert() {
+  ledcWriteTone(BUZZER_PWM_CHANNEL, NOTE_E6); // 1319 Hz
+  wait(50);
+  ledcWriteTone(BUZZER_PWM_CHANNEL, NOTE_G6); // 1568 Hz
+  wait(50);
+  ledcWrite(BUZZER_PWM_CHANNEL, 0);
+}
+
+void buzzer_two_tone_confirm() {
+  ledcWriteTone(BUZZER_PWM_CHANNEL, NOTE_G5); // 784 Hz
+  wait(30);
+  ledcWriteTone(BUZZER_PWM_CHANNEL, NOTE_C6); // 1047 Hz
+  wait(30);
+  ledcWrite(BUZZER_PWM_CHANNEL, 0);
+}
+
+// Special variants
+void buzzer_knock_confirm() {
+  ledcWriteTone(BUZZER_PWM_CHANNEL, NOTE_A4); // 440 Hz
+  wait(80); // 80ms pulse
+  ledcWrite(BUZZER_PWM_CHANNEL, 0);
+}
+
+void buzzer_echo_ping() {
+  ledcWriteTone(BUZZER_PWM_CHANNEL, NOTE_F6); // 1397 Hz
+  wait(20);
+  ledcWrite(BUZZER_PWM_CHANNEL, 0);
+  wait(40);
+  ledcWriteTone(BUZZER_PWM_CHANNEL, NOTE_F6);
+  wait(20);
+  ledcWrite(BUZZER_PWM_CHANNEL, 0);
+}
+
+void buzzer_heartbeat_double() {
+  ledcWriteTone(BUZZER_PWM_CHANNEL, NOTE_G6); // 1568 Hz
+  wait(50);
+  ledcWrite(BUZZER_PWM_CHANNEL, 0);
+  wait(50);
+  ledcWriteTone(BUZZER_PWM_CHANNEL, NOTE_G6);
+  wait(50);
+  ledcWrite(BUZZER_PWM_CHANNEL, 0);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // Additional patterns
 
 void buzzer_startup() 

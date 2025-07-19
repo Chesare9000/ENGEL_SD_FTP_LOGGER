@@ -275,6 +275,8 @@ void loop()
 //MAKE TIMERS FOR INDIVIDUAL FIREBASE TIMERS
 
 
+//HW Check charger and correct working
+
 //HW add battery for RTC and change RTC if not compatible with battery
 
 //Check charging circuit and confirm it works ok
