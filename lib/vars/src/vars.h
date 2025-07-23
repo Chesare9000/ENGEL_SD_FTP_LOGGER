@@ -15,7 +15,7 @@
 // Define the modem type before including TinyGsmClient.h
 #define TINY_GSM_MODEM_SIM7080
 #include <TinyGsmClient.h>//Firebase over LTE
-#include <FirebaseClient.h>
+//#include <FirebaseClient.h>
 #include <HardwareSerial.h>
 
 //TODO,implement hardware versioning here

@@ -296,7 +296,7 @@ void task_logger_sd_ftp(void * parameters)
                     //This flag will trigger the respone on loop();
                     task_ftp_wifi_running = true;
 
-                    create_task_ftp_wifi();    
+                    //create_task_ftp_wifi();    
 
 
                     
@@ -1171,7 +1171,7 @@ void task_ftp_wifi(void * parameters)
 
         if(firebase_file_initialized) 
         {
-            run_storage_via_wifi();
+            //run_storage_via_wifi();
         }
 
         else if (millis() - firebaseInitMillis > 3000)
@@ -1179,7 +1179,7 @@ void task_ftp_wifi(void * parameters)
             firebaseInitMillis = millis();
             Serial.println("\n---Firebase need Initialization ---\n");    
             wait(500);
-            firebase_file_init(logger_wifi_ssid , logger_wifi_password);
+            //firebase_file_init(logger_wifi_ssid , logger_wifi_password);
         }  
 
         wait(10);
