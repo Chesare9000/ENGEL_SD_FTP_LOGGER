@@ -98,6 +98,10 @@ bool wifi_connect()
   Serial.println(WiFi.localIP());                     // show IP address that the ESP32 has received from router
   
   if(oled_enabled)oled_wifi();
+  
+  //update the RTC as well
+  update_time_via_wifi();
+
   wifi_connected = true;
   return true;
 }
@@ -142,6 +146,10 @@ bool wifi_connect_to(char* ssid, char* pass )
   
   if(oled_enabled)oled_wifi();
   wifi_connected = true;
+
+  //update the RTC as well
+  update_time_via_wifi();
+
   return true;
 }
 

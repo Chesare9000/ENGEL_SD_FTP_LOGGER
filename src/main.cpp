@@ -1,4 +1,8 @@
 
+
+
+
+/*
 // Generic Deps.
 #include <Arduino.h>
 
@@ -143,6 +147,8 @@ std::map<std::string, float*> float_map;
 std::map<std::string, uint32_t*> uint32_map;
 std::map<std::string, std::string*> string_map;*/
 
+/*
+
 int non_critical_task_refresh_ms = 1000;
 
 bool fuel_gauge_initialized = false;
@@ -216,33 +222,31 @@ void setup()
 	//Detect and Hold the loop if action is needed
 	//check_alarms();
 
-	if (boot_mode == 0) // DEVELOPER MODE
+
+    //by some weird reason we have to start this before renunning the task TODO fix this but ftm keep it
+    //if(!firebase_file_initialized) firebase_file_init(logger_wifi_ssid,logger_wifi_password);
+    //oled_needed++;
+
+    if (boot_mode == 0) // DEVELOPER MODE
 	{
         wait(1000);
 		//create_task_mubea();
         //change to firebase when ready
 
-
-        if(!firebasse_file_initialized) firebase_file_init();
-       
         if(!task_logger_sd_ftp_running)
         {
             Serial.print("--\nRunning task_logger_sd_ftp Initialization Order"); 
           
             oled_task_logger_sd_ftp_running();
 
-            wait(100);
+           // wait(100);
 
             //Start the Firebase to upload the values
             create_task_logger_sd_ftp();
-            wait(1000);
-        }
-       
-            
+            //wait(1000);
+        }  
 	}
-
-    //TODO Delete after test
-    oled_needed++;
+   
 
 	// will set up and start the ble service
 	// variables should be connected before this
@@ -251,11 +255,16 @@ void setup()
     // Increase the watchdog timeout to 10 seconds
     //esp_task_wdt_init(10, true);
     //esp_task_wdt_add(NULL); // Add the current task to the watchdog
+
+    
+
 }
 
 void loop()
 {
-    if(firebasse_file_initialized) 
+    wait(10);	
+    /*
+    if(firebase_file_initialized) 
     {
         run_storage_via_wifi();
     }
@@ -264,12 +273,12 @@ void loop()
     {
         Serial.print("ERROR , Firebase File not INIT!");
         wait(1000);
-        firebase_file_init();
+        firebase_file_init(logger_wifi_ssid,logger_wifi_password);
     }
+    */
 
-    wait(10);
-	
-}
+/*
+}*/
 
 //TODO
 //MAKE TIMERS FOR INDIVIDUAL FIREBASE TIMERS
@@ -1117,3 +1126,370 @@ We need a bigger ESP32 with More GPIOs or maybe a big i2c extender , wil see
             }
         }
 		*/
+
+/**
+ * ABOUT:
+ *
+ * The example to upload object (file) to Storage bucket.
+ *
+ * This example uses the UserAuth class for authentication.
+ * See examples/App/AppInitialization for more authentication examples.
+ *
+ * The complete usage guidelines, please read README.md or visit https://github.com/mobizt/FirebaseClient
+ *
+ * SYNTAX:
+ *
+ * 1.------------------------
+ *
+ * FileConfig::FileConfig(<file_name>, <file_callback>);
+ *
+ * <file_name> - The filename included path of file that will be used.
+ * <file_callback> - The callback function that provides file operation.
+ *
+ * The file_callback function parameters included the File reference returned from file operation, filename for file operation and file_operating_mode.
+ * The file_operating_mode included file_mode_open_read, file_mode_open_write, file_mode_open_append and file_mode_open_remove.
+ *
+ * The file name can be a name of source (input) and target (output) file that used in upload and download.
+ *
+ * 2.------------------------
+ *
+ * Storage::upload(<AsyncClient>, <FirebaseStorage::Parent>, <file_config_data>, <MIME>, <AsyncResultCallback>, <uid>);
+ *
+ * <AsyncClient> - The async client.
+ * <FirebaseStorage::Parent> - The FirebaseStorage::Parent object included Storage bucket Id and object in its constructor.
+ * <file_config_data> - The filesystem data (file_config_data) obtained from FileConfig class object.
+ * <MIME> - The MIME type of file to be upload.
+ * <AsyncResultCallback> - The async result callback (AsyncResultCallback).
+ * <uid> - The user specified UID of async result (optional).
+ *
+ * The bucketid is the Storage bucket Id of object to upload.
+ * The object is the object to be stored in the Storage bucket.
+ */
+
+/*
+#include <Arduino.h>
+#include <FirebaseClient.h>
+#include "ExampleFunctions.h" // Provides the functions used in the examples.
+#include <tools.h>
+
+#define WIFI_SSID "Not_Your_Hotspot"
+#define WIFI_PASSWORD "wifirocks"
+
+#define API_KEY "AIzaSyDPxQ-3--VDEGU37vpG7FdTiweSYohak68"
+#define USER_EMAIL "cesar.gc@outlook.com"
+#define USER_PASSWORD "firebase"   
+
+// Define the Firebase storage bucket ID e.g bucket-name.appspot.com */
+/*
+#define STORAGE_BUCKET_ID "engel-dev-61ef3.firebasestorage.app"
+
+void processData(AsyncResult &aResult);
+
+FileConfig media_file("/media.mp4", file_operation_callback); // Can be set later with media_file.setFile("/media.mp4", file_operation_callback);
+
+UserAuth user_auth(API_KEY, USER_EMAIL, USER_PASSWORD, 3000 /* expire period in seconds (<3600) *//*);
+
+FirebaseApp app;
+
+SSL_CLIENT ssl_client;
+
+// This uses built-in core WiFi/Ethernet for network connection.
+// See examples/App/NetworkInterfaces for more network examples.
+using AsyncClient = AsyncClientClass;
+AsyncClient aClient(ssl_client);
+
+Storage storage;
+
+bool taskComplete = false;
+
+AsyncResult storageResult;
+
+*/
+
+// Generic Deps.
+#include <Arduino.h>
+
+// Custom Deps.
+#include <vars.h>
+#include <tools.h>
+#include <serial.h>
+#include <fuel_gauge.h>
+#include <oled.h>
+#include <i2c.h>
+#include <rgb.h>
+#include <gpio_exp.h>
+#include <temp.h>
+#include <lux.h>
+#include <imu.h>
+#include <rtc.h>
+#include <interrupts.h>
+#include <demos.h>
+#include <tasks.h>
+#include <nvs.h>
+#include <firebase.h>
+//#include <wifi_demo.h>
+//#include <ble.h>
+//#include <listener.h>
+//#include <mqtt.h>
+
+
+//Needed by Firebase 
+//(will not compile othersiwe)
+#include <LittleFS.h>
+#include <SD.h>
+#include <WiFi.h>
+#include <Update.h>
+
+#include <lte.h>
+
+#include <gps.h>
+
+#include <logger.h>
+
+#include <storage_via_wifi.h>
+
+//#include "esp_task_wdt.h"
+
+
+
+// Previously declared on Vars.h
+bool i2c_initialized = false;
+bool serial_initialized = false;
+bool gpios_initialized = false;
+bool interrupts_initialized = false;
+bool lux_initialized = false;
+bool oled_initialized = false;
+bool rtc_initialized = false;
+
+bool lora_enabled = false;
+
+bool log_enabled = true;
+bool oled_enabled = true;
+
+bool rgb_leds_initialized = false;
+int rgb_leds_brightness = 100; //max 255
+
+int board_temp = 0;
+float board_temp_max_threshold = 50.0;
+float board_temp_min_threshold = 40.0;
+
+int lux_val = 0;
+int lux_low_threshold = 100;
+int lux_int_persistance_counts = 4;
+
+bool reg_5v_enabled = false;
+
+bool lvl_shftr_enabled = false;
+
+bool ff2_q_status = false;
+
+int demos_total = 7; // including exit option
+
+bool movement_detected = false;
+bool moving = false;
+
+button btn_1 = {esp_btn_1_pin, 0, false};
+button btn_2 = {esp_btn_2_pin, 0, false};
+
+bool demo_is_ongoing = false;
+
+int boot_mode = 0;
+int current_mode = 0;
+
+// TODO if works change all initialization vars here to their respective .h or .cpp
+
+// int imu_mode=0;
+
+// GPIO Pins (Just Init with -1)
+// To be set after get_hw_version();
+// NEW
+int esp_int_gpio_exp_pin = -1;
+int esp_reg_5v_en_pin = -1;
+// OLD
+int esp_buzzer_pin = -1;
+int esp_lora_vcc_en_pin = -1;
+int esp_nrf_reset_pin = -1;
+int esp_lora_reset_pin = -1;
+int esp_int_charger_pin = -1;
+
+// I2c Bus Vars
+int imu_needed = 0;
+int rgb_needed = 0;
+int temp_needed = 0;
+int lux_needed = 0;
+int rtc_needed = 0;
+int fuel_gauge_needed = 0;
+int oled_needed = 0;
+
+bool rgb_bypassed = false;
+
+bool imu_running = false;
+bool rgb_running = false;
+bool temp_running = false;
+bool lux_running = false;
+bool rtc_running = false;
+// bool fuelgauge_running  = false;
+bool oled_running = false;
+
+
+int oled_token = oled_free;
+
+
+
+
+// BLE UUID
+/*std::string uuid = "0000fef3-0000-1000-8000-00805f9b34fb";
+// reference to ble service
+BLE::BLEngelService *engelService = new BLE::BLEngelService();
+BLE::Listener *listener;
+
+std::map<std::string, std::string> cast_reference;
+std::map<std::string, int*> int_map;
+std::map<std::string, bool*> bool_map;
+std::map<std::string, float*> float_map;
+std::map<std::string, uint32_t*> uint32_map;
+std::map<std::string, std::string*> string_map;*/
+
+
+
+int non_critical_task_refresh_ms = 1000;
+
+bool fuel_gauge_initialized = false;
+
+// Charger Vars
+bool charger_initialized = false;
+bool charging = false;		// Based on Charging status Pin
+bool charger_pgood = false; // Pin to indicate usb connected with 5V
+
+int bat_percent = -1;
+float bat_voltage = -1;
+float bat_c_rate = -1;
+
+float low_bat_threshold = 3.3; // in Volts
+
+// GPIO_EXP Expected Inputs States-------------
+
+bool int_usb = true;
+bool int_charger = true;
+bool int_rtc = false;
+bool int_low_bat = true;
+bool int_temp = true;
+bool int_lux = true;
+
+// GPIO EXP Derived Flags----------------------
+bool debug_mode = false;
+bool usb_connected = false;
+// bool charging = false; Aready Declared but keep here for reference
+bool rtc_alarm = false;
+bool low_bat = false;
+bool overheat = false;
+bool dark = false;
+
+bool gpio_exp_changed = false;
+
+// Defining HW VARIANT through HW_ID resistors
+bool hw_id_0 = false;
+bool hw_id_1 = false;
+bool hw_id_2 = false;
+bool hw_id_3 = false;
+
+// default is devel
+int hw_variant = hw_variant_devel;
+
+// Newest version by default
+// Downgrade if necessary on get_hw_version()
+int hw_version = 5;
+
+bool test_is_charging = false;
+
+int time_critical_tasks_running = 0;
+
+
+//MQTT related
+int mqtt_cycle_nr =0;
+
+int current_internet_connection = -1 ; //Not connected
+
+//Handle by NVS later
+int backend_config = backend_config_firebase;  
+
+void setup()
+{
+    init_all();
+
+   
+
+    // wait(100);
+
+    //Start the Firebase to upload the values
+    create_task_logger_sd_ftp();
+    //wait(1000);
+
+    oled_task_logger_sd_ftp_running();
+
+    wait(100);
+
+}
+
+
+bool task_ftp_wifi_running_first_loop = true;
+
+
+void loop()
+{
+    //Uploading Files to Storage
+    //Temporal : All thi must rerplaced by the task () while the stack overflow is fixed
+    if(task_ftp_wifi_running)
+    {
+        if(task_ftp_wifi_running_first_loop)
+        {
+            oled_starting_ftp_via_wifi();
+
+            if(task_logger_sd_ftp_running)
+            {
+                task_logger_sd_ftp_running = false;
+            }
+            
+            task_ftp_wifi_running_first_loop = false;
+        }
+
+
+        if(firebase_file_initialized) 
+        {
+            run_storage_via_wifi();
+        }
+
+        else
+        {
+            Serial.println("\n---Firebase need Initialization ---\n");    
+            
+            if(!firebase_file_init(logger_wifi_ssid , logger_wifi_password))
+            {
+                //Serial.print("ERROR ON firebase_file_init() , retrrying in 5 seconds");
+                //wait(5000);
+                
+                Serial.print("ERROR ON firebase_file_init()");
+                task_ftp_wifi_running = false;
+            }
+        }  
+        
+    }
+    else if (!task_logger_sd_ftp_running)
+    {
+        //Managed by task_ftp_wifi
+
+        //if(log_enabled) Serial.print(" \n---returning to menu!---");
+                
+        //create_task_logger_sd_ftp();
+
+
+
+        //Resetting Flags
+        task_ftp_wifi_running_first_loop = true;
+        
+    }
+    else wait(10);
+    
+
+}
+

@@ -295,9 +295,11 @@ void oled_can_waiting_data()
 void oled_error_rtc_not_calibrated()
 {
 
-    oled.drawStr(0,50,"ERROR");
-    oled.drawStr(0,60,"RTC NOT");
+    oled.drawStr(0,30,"ERROR");
+    oled.drawStr(0,40,"NO WIFI,");
+    oled.drawStr(0,60,"SO RTC NOT");
     oled.drawStr(0,70,"CALIBRATED!");
+
 
     oled.drawStr(0,90,"RETURNING");
     oled.drawStr(0,100,"TO ");
@@ -305,6 +307,57 @@ void oled_error_rtc_not_calibrated()
 
     oled_needs_refresh = true;
 
+}
+
+void oled_ftp_wifi_success()
+{
+    oled.drawStr(0,30,"UPLOAD");
+    oled.drawStr(0,40,"SUCCESSFUL");  
+
+    oled.drawStr(0,60,"RETURNING");
+    oled.drawStr(0,70,"TO");
+    oled.drawStr(0,80,"MENU");
+
+    oled_needs_refresh = true;
+
+}
+
+void oled_logger_error_on_sd()
+{
+    oled.drawStr(0,30,"ERROR"); 
+    oled.drawStr(0,40,"ON SD"); 
+
+    oled.drawStr(0,60,"RETURNING");
+    oled.drawStr(0,70,"TO");
+    oled.drawStr(0,80,"MENU");
+
+    oled_needs_refresh = true;
+
+}
+
+void oled_logger_blak_box_killed()
+{
+    oled.drawStr(0,30,"BLACKBOX"); 
+    oled.drawStr(0,40,"KILLED"); 
+
+    oled.drawStr(0,60,"RETURNING");
+    oled.drawStr(0,70,"TO");
+    oled.drawStr(0,80,"MENU");
+
+    oled_needs_refresh = true;
+
+}
+
+
+
+void oled_starting_ftp_via_wifi()
+{
+    oled.drawStr(0,30,"RUNNING");
+    oled.drawStr(0,40,"FTP");  
+    oled.drawStr(0,50,"VIA");
+    oled.drawStr(0,60,"WIFI");
+  
+    oled_needs_refresh = true;
 }
 
 
@@ -761,7 +814,34 @@ void oled_template_buzzer(int cursor_pos)
     oled_needs_refresh = true;
 } 
 
+void oled_logger_error_wifi()
+{
+    //Eliminate any previous value for the oled
+    oled.clearBuffer();
 
+    //DEVEL MODE
+    oled.drawStr(0,10,"ENGEL_V4");
+    oled.drawStr(0,20,"LOGGER");
+
+  
+    oled.setCursor(0,50);
+    oled.printf("ERROR");
+
+    oled.setCursor(0,60);
+    oled.printf("WIFI NOT");
+
+    oled.setCursor(0,80);
+    oled.print("CONNECTED");   
+
+    oled.setCursor(0,90);
+    oled.printf("RETURNING");
+
+    oled.setCursor(0,100);
+    oled.print("TO MENU");
+
+   //Will refresh when possible
+    oled_needs_refresh = true;
+} 
 
 
 void oled_logger_uploading(int current , int total )

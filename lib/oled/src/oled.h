@@ -116,3 +116,12 @@ void oled_dev_info(int screen_nr);
 
 void oled_logger_uploading(int current , int total );
 void oled_logger_separating(int part);
+void oled_logger_error_wifi();
+
+void oled_starting_ftp_via_wifi();
+
+void oled_ftp_wifi_success();
+
+void oled_logger_error_on_sd();
+
+void oled_logger_blak_box_killed();

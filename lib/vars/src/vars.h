@@ -840,4 +840,13 @@ extern bool oled_dev_mode_enabled;
 
 extern bool inputs_are_missing;
 
-extern bool firebasse_file_initialized ;
+extern bool firebase_file_initialized ;
+
+extern bool task_ftp_wifi_running;
+
+extern char* logger_wifi_ssid;
+extern char* logger_wifi_password;
+
+extern bool logger_mode_active;
+
+extern bool task_button_mapper_for_oled_dev_screen_nr_running;

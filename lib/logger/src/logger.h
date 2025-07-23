@@ -21,5 +21,12 @@ void task_logger_ms_selector(void * parameters);
 
 void create_task_button_mapper_for_oled_dev_screen_nr();
 void task_button_mapper_for_oled_dev_screen_nr_declare();
-void ttask_button_mapper_for_oled_dev_screen_nr_release();
+void task_button_mapper_for_oled_dev_screen_nr_release();
 void task_button_mapper_for_oled_dev_screen_nr(void * parameters);
+
+
+
+void create_task_ftp_wifi();
+void task_ftp_wifi_declare();
+void task_ftp_wifi_release();
+void task_ftp_wifi(void * parameters);

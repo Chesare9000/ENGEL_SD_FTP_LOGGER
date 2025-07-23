@@ -11,6 +11,11 @@
 #include <imu.h>
 #include <WiFi.h>
 #include <oled.h>
+#include <buzzer.h>
+
+#include <logger.h>
+
+#include <oled.h>
 
 
 //Setting correct pins to the SD
@@ -217,6 +222,7 @@ void task_sd(void * parameters)
     {
         Serial.print("\n\n------ERROR: SD Not Detected -----");
         Serial.print("\n------Retrying in 5 seconds -----");
+        oled_logger_error_on_sd();
         wait(5000);
         sd_initialized = sd_init();        
     }
@@ -230,8 +236,24 @@ void task_sd(void * parameters)
         black_box_running = false;
         //Here close the SD before exiting
 
-        Serial.print("---\n task_sd terminated ----");
+        Serial.print("\n---task_sd terminated ----");
+       
 
+        if (logger_mode_active)
+        {
+            Serial.print("\n---Returning to Menu----");
+            oled_dev_mode_enabled = false;
+            oled_clear();
+            wait(1000);
+            oled_logger_error_on_sd();
+            wait(3000);
+
+            if(task_button_mapper_for_oled_dev_screen_nr_running)task_button_mapper_for_oled_dev_screen_nr_running =false;
+
+            create_task_logger_sd_ftp();
+        }
+
+        //Kill this task
         vTaskDelete(NULL); 
     }
 
@@ -416,6 +438,7 @@ bool sd_init()
     if(!SD.begin())
     {
         Serial.println("\n---Card Mount Failed");
+        buzzer_error();
         return false;
     }
 
@@ -1319,7 +1342,7 @@ int print_sd_log_folder_content()
 {
     int total_files = 0;
 
-    Serial.println("Listing .txt files in /logs:");
+    Serial.println("Listing .txt files in SD card under /logs:");
     File dir = SD.open("/logs");
     File file = dir.openNextFile();
     while (file) 

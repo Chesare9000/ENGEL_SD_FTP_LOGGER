@@ -13,7 +13,7 @@
 #define ENABLE_FS
 
 #include <FirebaseClient.h>
-#include <set>
+//#include <set>
 //#include <ExampleFunctions.h> // Provides the functions used in the examples.
 
 #include <wifi.h>
@@ -25,6 +25,7 @@
 #include <vars.h>
 #include <oled.h>
 #include <buzzer.h>
+#include <rtc.h>
 
 #define firebase_user "cesar.gc@outlook.com"
 #define firebase_pass "firebase"   
@@ -36,8 +37,8 @@
 //#define WIFI_SSID "Not_Your_Hotspot"
 //#define WIFI_PASSWORD "wifirocks"
 
-#define WIFI_SSID "cesar"
-#define WIFI_PASSWORD "cesar1234"
+//#define WIFI_SSID "cesar"
+//#define WIFI_PASSWORD "cesar1234"
 
 
 #define API_KEY firebase_api_key
@@ -72,13 +73,13 @@ int total_files_on_sd = 0;
 // Authentication
 UserAuth user_auth2(API_KEY, USER_EMAIL, USER_PASSWORD, 3000 /* expire period in seconds (<3600) */);
 
-// Firebase components
+//Firebase Components 
 FirebaseApp app2;
 
 WiFiClientSecure ssl_client2;
-//SSL_CLIENT ssl_client2;
 
 using AsyncClient = AsyncClientClass;
+
 AsyncClient aClient2(ssl_client2);
 
 //CloudStorage cstorage;
@@ -87,7 +88,7 @@ Storage storage;
 
 bool taskComplete = false;
 
-bool firebasse_file_initialized = false;
+bool firebase_file_initialized = false;
 
 //AsyncResult cloudStorageResult;
 AsyncResult storageResult;
@@ -134,58 +135,174 @@ void processData2(AsyncResult &aResult)
     }
 }
 
-
-bool firebase_file_init()
+String get_current_date_str()
 {
-    if (WiFi.status() != WL_CONNECTED)
+    char date_buf[16];
+    snprintf(date_buf, sizeof(date_buf), "%04d-%02d-%02d", year, month, day);
+    return String(date_buf);
+}
+
+bool firebase_file_init(char* ssid , char* password)
+{
+  Serial.println("\n---Initializing Firebase---\n");    
+  wait(100);
+
+  //UBaseType_t stackRemaining = uxTaskGetStackHighWaterMark(NULL);
+  //Serial.printf("📊 Task remaining stack: %u bytes\n", stackRemaining);
+  
+  if (WiFi.status() != WL_CONNECTED)
+  {
+    
+    Serial.print("ERROR : WIFI NOT CONNECTED , EXITING");
+    
+    if(task_ftp_wifi_running)
     {
-        if(!wifi_connect_to(WIFI_SSID,WIFI_PASSWORD))
-        {
-            Serial.print("ERROR : WIFI NOT CONNECTED , EXITING");
-            firebasse_file_initialized = false;
-            return false;;
-        }
-    } 
-
-    Serial.println("\n---Initializing Firebase---\n");    
+      buzzer_error();
+      oled_logger_error_wifi();
+      wait(1000);
+      task_ftp_wifi_running = false;
+    }
     
-    Firebase.printf("Firebase Client v%s\n", FIREBASE_CLIENT_VERSION);
+    firebase_file_initialized = false;
 
-    // Configure SSL client
-    ssl_client2.setInsecure();
-    ssl_client2.setTimeout(5000);
-    ssl_client2.setHandshakeTimeout(5);
+    return false;
     
-    //set_ssl_client_insecure_and_buffer(ssl_client2);
+    /*
+    
+    Serial.print("\n---CONNECTING TO WIFI---");
 
-    // Assign the valid time only required for authentication process with ServiceAuth and CustomAuth.
-    //app2.setTime(get_ntp_time());
+    if(!wifi_connect_to(ssid,password))
+    {
+        Serial.print("ERROR : WIFI NOT CONNECTED , EXITING");
+        firebase_file_initialized = false;
+        wait(1000);
+        return false;
+    }
 
-    Serial.println("Initializing app2...");
-    initializeApp(aClient2, app2, getAuth(user_auth2), processData2, "authTask");
+    */
+    
+  } 
+  else //WIFI is connected
+  {
+      Serial.print("\n---WIFI ALREADY CONNECTED --- CONTINUING---\n ");
+  }
 
-    //app2.getApp<CloudStorage>(cstorage);
-    // Or intialize the app and wait.
-    // initializeApp(aClient, app, getAuth(user_auth), 120 * 1000, auth_debug_print);
+  rtc_update();
 
+  if (year < 2020) 
+  {
+    Serial.println("RTC not valid!");
+    return false;
+  }
+
+  Firebase.printf("Firebase Client v%s\n", FIREBASE_CLIENT_VERSION);
+
+  // Add these checks:
+  if (!ssl_client2) 
+  {
+    Serial.println("❌ SSL Client not initialized");
+    return false;
+  }
+  
+  ssl_client2.setInsecure();
+  ssl_client2.setTimeout(5000);
+  ssl_client2.setHandshakeTimeout(5);
+
+  //Serial.printf("aClient2 ptr: %p\n", (void*)&aClient2);
+  //Serial.printf("app2 ptr: %p\n", (void*)&app2);
+  //Serial.printf("user_auth2 ptr: %p\n", (void*)&user_auth2);
+  //Serial.printf("processData2 ptr: %p\n", (void*)processData2);
+  
+  if (!&aClient2 || !&app2 || !&user_auth2 || !processData2) {
+    Serial.println("❌ Null pointer detected before initializeApp!");
+    return false;
+  }
+  Serial.printf("Free heap before Firebase init: %u\n", ESP.getFreeHeap());
+  
+  if (!SD.begin()) 
+  {
+    Serial.println("SD card not initialized! Aborting Firebase init.");
+    return false;
+  }
+  else Serial.println("\n---SD OK");
+  
+  wait(1000);
+  
+  Serial.println("Initializing app2...");
+  //initializeApp(aClient2, app2, getAuth(user_auth2), processData2, "authTask");
+
+  initializeApp(aClient2, app2, getAuth(user_auth2), 10000, processData2); // 10s
+
+  Serial.println("app2 initialized...");
+  wait(1000);
+  
+  if (!app2.ready()) 
+  {
+      Serial.println("❌ Firebase not ready. Aborting...");
+      return false;
+  }
+  else  Serial.println("\n--Firebase ready---");
+
+  wait(1000);
+
+  //app2.getApp<CloudStorage>(cstorage);
+  // Or intialize the app and wait.
+  //initializeApp(aClient2, app2, getAuth(user_auth2), 10 * 1000 /* 10s timeout */ , processData2);
+
+  if (app2.ready()) 
+  {
     app2.getApp<Storage>(storage);
+  } 
+  else 
+  {
+    Serial.println("❌ App not ready, skipping storage init.");
+    return false;
+  }
 
-    total_files_on_sd = print_sd_log_folder_content();
+  wait(1000);
 
-    // Ensure the chip ID is read if it hasn't been updated
-    if (!esp_id) 
-    {
-        get_esp_id();
-        wait(100);
-    }    
+  Serial.println("\n--Storage ready---");
 
-    firebasse_file_initialized = true;
-    return true;
+  total_files_on_sd = print_sd_log_folder_content();
+
+  // Ensure the chip ID is read if it hasn't been updated
+  if (!esp_id) 
+  {
+      get_esp_id();
+      wait(100);
+  }    
+
+  firebase_file_initialized = true;
+  return true;
 
 }
 
+void firebase_file_deinit()
+{
+  //Serial.println("🧹 Cleaning up Firebase state before exiting ...");
+  // Important: clear pending operations and free heap-allocated data
+
+ // Manually destroy the FirebaseApp by reinitializing in-place
+  //app2.~FirebaseApp();
+  //new (&app2) FirebaseApp();
+
+  // Manually destroy the AsyncClient
+  //aClient2.~AsyncClientClass();
+  //new (&aClient2) AsyncClientClass(ssl_client2);
+
+  // Stop SSL session if active
+  //ssl_client2.stop();
+
+  // Optional: clear taskComplete or other flags
+  taskComplete = false;
+  firebase_file_initialized = false;
+}
+
+
 void run_storage_via_wifi()
 {
+  if(task_ftp_wifi_running)
+  {
     // To maintain the authentication process.
     app2.loop();
 
@@ -197,10 +314,9 @@ void run_storage_via_wifi()
     else wait(10);
 
     // For async call with AsyncResult.
-    //processData2(cloudStorageResult);
+    processData2(storageResult);
 
-    // For async call with AsyncResult.
-    //processData2(storageResult);
+  }
 }
 
 
@@ -287,6 +403,8 @@ bool getExistingFilesFromStorage(const String &subFolderPath, std::set<String> &
 
 void uploadLogsFromSD() 
 {
+  String todayStr = get_current_date_str();
+
   File dir = SD.open("/logs");
   if (!dir) 
   {
@@ -327,6 +445,11 @@ void uploadLogsFromSD()
 
       String mimeType = "text/plain";
 
+      // ✅ Determine if this is today's file BEFORE chunking
+      String fileDate = entry.name();
+      fileDate = fileDate.substring(0, 10); // YYYY-MM-DD
+      bool isToday = (fileDate == todayStr);
+
       splitFileIntoChunksIfNeeded(filePath, partFiles, 2100000, existingRemoteFiles);
 
       buzzer_quick_alert();
@@ -334,18 +457,25 @@ void uploadLogsFromSD()
       for (size_t i = 0; i < partFiles.size(); i++) 
       {
         String partPath = partFiles[i];
-
         String partFileName = partPath.substring(partPath.lastIndexOf("/") + 1);
 
-        if (existingRemoteFiles.find(partFileName) != existingRemoteFiles.end())
+        bool isTodayFile = false;
+
+        // Check if this chunk belongs to today's file
+        if (partFileName.indexOf(get_current_date_str()) != -1)
+        {
+            isTodayFile = true;
+            Serial.printf("📅 Detected today's file: %s → will force upload.\n", partFileName.c_str());
+        }
+
+        if (existingRemoteFiles.find(partFileName) != existingRemoteFiles.end() && !isTodayFile)
         {
             Serial.printf("✅ File already exists — skipping upload: %s\n", partFileName.c_str());
             continue;
         }
-        
         else
         {
-          Serial.printf("\n---File: %s not found on Storage , uploading ---\n", partFileName.c_str());
+          if(!isTodayFile)Serial.printf("\n---File: %s not found on Storage , uploading ---\n", partFileName.c_str());
         }
 
         String firebasePath = String("/logs/") + esp_id + "/" + partPath.substring(partPath.lastIndexOf("/") + 1);
@@ -386,7 +516,7 @@ void uploadLogsFromSD()
 
                 buzzer_ok();
 
-                // Only delete if Firebase confirms full size upload
+                // Only delete if Firebase confirms full size upload and has a _part in it
                 if (partPath.indexOf("_part") != -1) 
                 {
                     SD.remove(partPath.c_str());
@@ -404,8 +534,13 @@ void uploadLogsFromSD()
                 if(attempt > 3)
                 {
                   buzzer_error();
-                  SD.remove(partPath.c_str());
-                  Serial.printf("🧹 Deleted chunk file: %s\n", partPath.c_str()); 
+                  
+                  // Only delete if contains a _part on it
+                  if (partPath.indexOf("_part") != -1) 
+                  {
+                      SD.remove(partPath.c_str());
+                      Serial.printf("🧹 Deleted chunk file: %s\n", partPath.c_str());
+                  }
                   
                   wait(2000);
                   Serial.println("----- Restarting ESP due to upload error");
@@ -426,8 +561,12 @@ void uploadLogsFromSD()
             {
               buzzer_error();
 
-              SD.remove(partPath.c_str());
-              Serial.printf("🧹 Deleted chunk file: %s\n", partPath.c_str());
+              // Only delete if Firebase confirms full size upload
+              if (partPath.indexOf("_part") != -1) 
+              {
+                  SD.remove(partPath.c_str());
+                  Serial.printf("🧹 Deleted chunk file: %s\n", partPath.c_str());
+              }
 
               wait(2000);
               Serial.println("----- Restarting ESP due to upload error");
@@ -457,5 +596,10 @@ void uploadLogsFromSD()
   dir.close();
   Serial.printf("🟢 Finished uploading all log files.\n");
   buzzer_success();
+  oled_ftp_wifi_success();
+  wait(5000);
+  Serial.printf("\nReturning to Menu\n");
+  wait(3000);
+  task_ftp_wifi_running = false;
 }
 
