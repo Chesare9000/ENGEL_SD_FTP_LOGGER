@@ -15,7 +15,7 @@
 // Define the modem type before including TinyGsmClient.h
 #define TINY_GSM_MODEM_SIM7080
 #include <TinyGsmClient.h>//Firebase over LTE
-//#include <FirebaseClient.h>
+#include <FirebaseClient.h>
 #include <HardwareSerial.h>
 
 //TODO,implement hardware versioning here
@@ -731,7 +731,6 @@ extern bool task_mubea_running;
 
 extern SemaphoreHandle_t global_vars_mutex; // Global mutex for shared global vars
 
-
 extern int oled_dev_screen_nr;
 extern int oled_dev_screen_nr_default;
 extern int oled_dev_screen_nr_max;
@@ -757,6 +756,7 @@ enum firebase_preferred_internet_connection
   connection_via_wifi,
   connection_via_lte,
 };
+
 
 
 //For LTE/FIREBASE
@@ -836,17 +836,48 @@ extern bool task_logger_sd_ftp_running;
 
 extern char* ota_ssid; 
 
+extern String logger_wifi_ssid;
+extern String logger_wifi_password;
+
 extern bool oled_dev_mode_enabled;
 
 extern bool inputs_are_missing;
 
 extern bool firebase_file_initialized ;
 
-extern bool task_ftp_wifi_running;
 
-extern char* logger_wifi_ssid;
-extern char* logger_wifi_password;
+extern bool ftp_wifi_running;
 
-extern bool logger_mode_active;
 
-extern bool task_button_mapper_for_oled_dev_screen_nr_running;
+
+//check if make it later global to identify oveal vehicle config 
+//or make it better a preprocessor , macro or coming from firebase  
+
+enum vehicle_id_list
+{
+    mubea_heavy_cargo,
+    mubea_scooter
+};
+
+extern int vehicle_id;
+
+
+enum oled_dev_screen_list
+{
+    oled_dev_off,
+	oled_dev_black_box_info_on_firebase_task,
+	oled_dev_gps,
+	oled_dev_can,
+	oled_dev_gyro_x,
+	oled_dev_gyro_y,
+	oled_dev_gyro_z,
+	oled_dev_acc_x,
+	oled_dev_acc_y,
+	oled_dev_acc_z,
+	oled_dev_overall_status,
+	oled_dev_ota,
+	//write here any more options
+
+	
+	oled_dev_last_item
+};

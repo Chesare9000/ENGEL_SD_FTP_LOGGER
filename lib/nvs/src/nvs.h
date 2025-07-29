@@ -72,6 +72,12 @@ bool nvs_get_wifi_credentials(int nvs_log_mode);
 
 void nvs_delete();
 
+//This will get logger_wifi_ssid and logger_wifi_pass store on nvs
+void nvs_set_logger_wifi_credentials(String ssid, String pass, int nvs_log_mode);
+//This will update logger_wifi_ssid and logger_wifi_pass
+void nvs_get_logger_wifi_credentials(int nvs_log_mode);
+
+
 /*
 
 List of States and Variables that will be saved on NVS and recovered upon reboot

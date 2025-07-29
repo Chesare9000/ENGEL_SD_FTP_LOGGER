@@ -52,3 +52,8 @@ void recalibrate_imu_via_i2c_manager(int imu_recalibrate_log_handler_mode);
 
 //FOR WEB DEMO check also:
 //https://randomnerdtutorials.com/esp32-mpu-6050-web-server/
+
+
+void rgb_leds_imu_pos(bool acc_raw,int brightness,char axis,int max_val);
+//acc_raw is true and false is acc_compensated
+void rgb_leds_imu_acc(bool acc_raw,int brightness,char axis,int max_val);

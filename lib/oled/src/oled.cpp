@@ -5,11 +5,13 @@
 #include <tools.h>
 #include <i2c.h>
 #include <fuel_gauge.h>
+#include <rgb.h>
 
 #include "oled.h"
 
 #include <ble_demo_fw.h>
 #include <mqtt.h>
+#include <imu.h>
 
 
 #define acc_threshold 100
@@ -30,9 +32,9 @@ int firebase_oled_last_update = 0;
 int firebase_oled_update_interval = 1000;
 
 //For the oled_dev_screen_nr_nr
-int oled_dev_screen_nr_default = 6 ;
+int oled_dev_screen_nr_default = oled_dev_black_box_info_on_firebase_task ;
 int oled_dev_screen_nr = oled_dev_screen_nr_default;
-int oled_dev_screen_nr_max = 7;
+int oled_dev_screen_nr_max = oled_dev_last_item-1;
 
 
 //Display Class 
@@ -122,6 +124,10 @@ void oled_gps_test(int gps_test_nr)
 
 void oled_gps_not_detected()
 {
+    //changing to normal bigger font
+    oled.setFont(u8g2_font_5x7_tf);
+    oled.clearBuffer();
+
     oled.drawStr(0,50,"GPS");
     oled.drawStr(0,60,"NOT DETECTED");
 
@@ -133,6 +139,7 @@ void oled_gps_waiting_data()
     //changing to normal bigger font
     oled.setFont(u8g2_font_5x7_tf);
     oled.clearBuffer();
+
     oled.drawStr(0,50,"WAITING");
     oled.drawStr(0,60,"GPS DATA");
     oled_needs_refresh = true;
@@ -169,8 +176,51 @@ void oled_gps_good_data_template()
     oled.setCursor(0,110);
     oled.printf("SAT : %d ", gps_sat_count );
 
+
+
     oled_needs_refresh = true;
 }
+void oled_gps_good_data_template_for_black_box()
+{
+    //changing to normal bigger font
+    oled.setFont(u8g2_font_5x7_tf);
+
+    oled.clearBuffer();	
+
+    oled.setCursor(0,10);
+    oled.print("3D FIX OK" );
+
+    oled.setCursor(0,40);
+    oled.printf("LAT : %f ", gps_latitude );
+
+    oled.setCursor(0,50);
+    oled.printf("LNG : %f ", gps_longitude );
+
+    oled.setCursor(0,60);
+    oled.printf("KPH : %f ", gps_speed_kmh );
+
+    oled.setCursor(0,70);
+    oled.printf("MPH : %f ", gps_speed_mph );
+
+    oled.setCursor(0,80);
+    oled.printf("HEA : %f ", gps_heading );
+
+    oled.setCursor(0,90);
+    oled.printf("ALT : %f ", gps_altitude );
+
+    oled.setCursor(0,100);
+    oled.printf("SAT : %d ", gps_sat_count );
+
+    oled.setCursor(0,120);
+    oled.printf("<Next   Stop>");   
+
+
+    oled_needs_refresh = true;
+}
+
+
+
+
 
 void oled_gps_bad_data_template()
 {
@@ -202,6 +252,43 @@ void oled_gps_bad_data_template()
 
     oled_needs_refresh = true;
 }
+
+void oled_gps_bad_data_template_for_black_box()
+{
+    oled.clearBuffer();	
+
+    oled.setCursor(0,10);
+    oled.print("BAD GPS DATA" );
+
+    oled.setCursor(0,40);
+    oled.printf("LAT : %f ", gps_latitude );
+
+    oled.setCursor(0,50);
+    oled.printf("LONG : %f ", gps_longitude );
+
+    oled.setCursor(0,60);
+    oled.printf("KPH : %f ", gps_speed_kmh );
+
+    oled.setCursor(0,70);
+    oled.printf("MPH : %f ", gps_speed_mph );
+
+    oled.setCursor(0,80);
+    oled.printf("HEA : %f ", gps_heading );
+
+    oled.setCursor(0,90);
+    oled.printf("ALT : %f ", gps_altitude );
+
+    oled.setCursor(0,100);
+    oled.printf("SAT : %d ", gps_sat_count );
+
+    oled.setCursor(0,120);
+    oled.printf("<Next   Stop>");
+
+    oled_needs_refresh = true;
+}
+
+
+    
 
 void oled_gps_spoof_question()
 {
@@ -279,6 +366,10 @@ void oled_gps_spoofing_disabled()
 
 void oled_can_not_detected()
 {
+    //changing to normal bigger font
+    oled.setFont(u8g2_font_5x7_tf);
+    oled.clearBuffer();
+
     oled.drawStr(0,50,"CAN");
     oled.drawStr(0,60,"NOT DETECTED");
 
@@ -287,19 +378,24 @@ void oled_can_not_detected()
 
 void oled_can_waiting_data()
 {
+    //changing to normal bigger font
+    oled.setFont(u8g2_font_5x7_tf);
+    oled.clearBuffer();
+
     oled.drawStr(0,50,"WAITING");
     oled.drawStr(0,60,"CAN DATA");
     oled_needs_refresh = true;
 }
 
 void oled_error_rtc_not_calibrated()
-{
+{  
+    //changing to normal bigger font
+    oled.setFont(u8g2_font_5x7_tf);
+    oled.clearBuffer();
 
-    oled.drawStr(0,30,"ERROR");
-    oled.drawStr(0,40,"NO WIFI,");
-    oled.drawStr(0,60,"SO RTC NOT");
+    oled.drawStr(0,50,"ERROR");
+    oled.drawStr(0,60,"RTC NOT");
     oled.drawStr(0,70,"CALIBRATED!");
-
 
     oled.drawStr(0,90,"RETURNING");
     oled.drawStr(0,100,"TO ");
@@ -309,8 +405,147 @@ void oled_error_rtc_not_calibrated()
 
 }
 
+void oled_black_box_starting()
+{
+    //changing to normal bigger font
+    oled.setFont(u8g2_font_5x7_tf);
+    oled.clearBuffer();
+
+    oled.drawStr(0,50,"Starting");
+    oled.drawStr(0,60,"Black_Box");
+    
+    oled.drawStr(0,90,"PLEASE");
+    oled.drawStr(0,100,"WAIT");
+    
+    oled_needs_refresh = true;
+
+}
+
+
+void oled_ftp_wifi_upload_complete()
+{
+    //changing to normal bigger font
+    oled.setFont(u8g2_font_5x7_tf);
+    oled.clearBuffer();
+
+    oled.drawStr(0,30,"FILE");  
+    oled.drawStr(0,40,"UPLOAD");
+    oled.drawStr(0,50,"SUCCESSFUL"); 
+
+    oled.drawStr(0,80,"PROCEEDING"); 
+
+    oled_needs_refresh = true;
+
+}
+
+void oled_ftp_wifi_connecting_to_database()
+{
+    //changing to normal bigger font
+    oled.setFont(u8g2_font_5x7_tf);
+    oled.clearBuffer();
+
+    oled.drawStr(0,30,"CONNECTING");  
+    oled.drawStr(0,40,"TO");
+    oled.drawStr(0,50,"DATABASE"); 
+
+    oled_needs_refresh = true;
+}
+
+void oled_ftp_wifi_upload_failed()
+{
+    //changing to normal bigger font
+    oled.setFont(u8g2_font_5x7_tf);
+    oled.clearBuffer();
+
+    oled.drawStr(0,30,"FILE");  
+    oled.drawStr(0,40,"UPLOAD");
+    oled.drawStr(0,50,"FAILED"); 
+
+    oled.drawStr(0,70,"RESTARTING"); 
+    oled.drawStr(0,80,"ESP"); 
+
+    oled_needs_refresh = true;
+
+}
+
+void oled_ftp_wifi_splitting_in_parts(int total_parts)
+{
+    //changing to normal bigger font
+    oled.setFont(u8g2_font_5x7_tf);
+    oled.clearBuffer();
+
+    oled.drawStr(0,30,"FILE");  
+    oled.drawStr(0,40,"TOO");
+    oled.drawStr(0,50,"BIG"); 
+
+    oled.drawStr(0,70,"SPLITTING");  
+    oled.setCursor(0,80);
+    oled.printf("IN %d",total_parts);
+    oled.drawStr(0,90,"PARTS"); 
+    oled_needs_refresh = true;
+
+}
+
+void oled_ftp_wifi_checking(String path)
+{
+    //changing to normal bigger font
+    oled.setFont(u8g2_font_5x7_tf);
+    oled.clearBuffer();
+
+    oled.drawStr(0,30,"CHECKING");  
+    oled.drawStr(0,40,"FILE ");
+
+
+    oled.setCursor(0,60);
+    oled.print(path);
+   
+    oled_needs_refresh = true;
+}
+
+void oled_ftp_wifi_error(String path)
+{
+    //changing to normal bigger font
+    oled.setFont(u8g2_font_5x7_tf);
+    oled.clearBuffer();
+
+    oled.drawStr(0,30,"ERROR");
+    oled.drawStr(0,40,"ON ");  
+    oled.drawStr(0,50,"FILE ");
+
+
+    oled.setCursor(0,60);
+    oled.print(path);
+   
+    oled_needs_refresh = true;
+}
+
+void oled_ftp_wifi_uploading_directly(String path)
+{
+   //changing to normal bigger font
+    oled.setFont(u8g2_font_5x7_tf);
+    oled.clearBuffer();
+
+    oled.drawStr(0,30,"UPLOADING ");
+    oled.drawStr(0,40,"DIRECTY");  
+    oled.drawStr(0,50,"FILE ");
+
+
+    oled.setCursor(0,60);
+    oled.print(path);
+   
+    oled_needs_refresh = true;
+}
+
+
+
+
+
 void oled_ftp_wifi_success()
 {
+    //changing to normal bigger font
+    oled.setFont(u8g2_font_5x7_tf);
+    oled.clearBuffer();
+
     oled.drawStr(0,30,"UPLOAD");
     oled.drawStr(0,40,"SUCCESSFUL");  
 
@@ -324,6 +559,10 @@ void oled_ftp_wifi_success()
 
 void oled_logger_error_on_sd()
 {
+    //changing to normal bigger font
+    oled.setFont(u8g2_font_5x7_tf);
+    oled.clearBuffer();
+
     oled.drawStr(0,30,"ERROR"); 
     oled.drawStr(0,40,"ON SD"); 
 
@@ -337,6 +576,10 @@ void oled_logger_error_on_sd()
 
 void oled_logger_blak_box_killed()
 {
+    //changing to normal bigger font
+    oled.setFont(u8g2_font_5x7_tf);
+    oled.clearBuffer();
+
     oled.drawStr(0,30,"BLACKBOX"); 
     oled.drawStr(0,40,"KILLED"); 
 
@@ -352,6 +595,10 @@ void oled_logger_blak_box_killed()
 
 void oled_starting_ftp_via_wifi()
 {
+    //changing to normal bigger font
+    oled.setFont(u8g2_font_5x7_tf);
+    oled.clearBuffer();
+
     oled.drawStr(0,30,"RUNNING");
     oled.drawStr(0,40,"FTP");  
     oled.drawStr(0,50,"VIA");
@@ -359,6 +606,7 @@ void oled_starting_ftp_via_wifi()
   
     oled_needs_refresh = true;
 }
+
 
 
 void oled_can_data_template()
@@ -594,14 +842,18 @@ void oled_template_logger_sd_ftp(int cursor_pos) //Show the relevant info for th
     //Eliminate any previous value for the oled
     oled.clearBuffer();
 
-    oled.drawStr(0,10,"ENGEL_V4");
+    oled.drawStr(0,10,"LOGGER MENU");
 
-    oled.drawStr(0,20,"LOGGER MENU");
-
+    //setting ssid to smaller font   
+    oled.setCursor(0,20);
+    oled.setFont(u8g2_font_tiny5_tr); 
+    oled.printf("SSID:%s", logger_wifi_ssid);
+    oled.setFont(u8g2_font_5x7_tf);
+   
     oled.setCursor(0,30);
     if(WiFi.isConnected())
     {
-        //setting to smaller font   
+        //setting ip address to smaller font   
         oled.setFont(u8g2_font_tiny5_tr); 
         oled.print(WiFi.localIP());
         oled.setFont(u8g2_font_5x7_tf);
@@ -814,34 +1066,7 @@ void oled_template_buzzer(int cursor_pos)
     oled_needs_refresh = true;
 } 
 
-void oled_logger_error_wifi()
-{
-    //Eliminate any previous value for the oled
-    oled.clearBuffer();
 
-    //DEVEL MODE
-    oled.drawStr(0,10,"ENGEL_V4");
-    oled.drawStr(0,20,"LOGGER");
-
-  
-    oled.setCursor(0,50);
-    oled.printf("ERROR");
-
-    oled.setCursor(0,60);
-    oled.printf("WIFI NOT");
-
-    oled.setCursor(0,80);
-    oled.print("CONNECTED");   
-
-    oled.setCursor(0,90);
-    oled.printf("RETURNING");
-
-    oled.setCursor(0,100);
-    oled.print("TO MENU");
-
-   //Will refresh when possible
-    oled_needs_refresh = true;
-} 
 
 
 void oled_logger_uploading(int current , int total )
@@ -1389,6 +1614,48 @@ void oled_wifi()
     oled_needs_refresh = true;
 }
 
+void oled_connecting_wifi(String ssid, String pass)
+{
+    oled.clearBuffer();
+    
+    oled.drawStr(0,10,"ENGEL_V4");
+    oled.drawStr(0,20,"WIFI");
+
+    if(WiFi.status() != WL_CONNECTED)
+    {
+        oled.drawStr(0,40,"WIFI");
+        oled.drawStr(0,60,"CONNECTING");      
+        oled.drawStr(0,80,"TO");  
+
+        oled.setFont(u8g2_font_04b_03_tr); //<- Mod Font
+        oled.setCursor(0,100);
+        oled.print(ssid); 
+
+        oled.setFont(u8g2_font_5x7_tf); //<- Original Font
+
+    }
+    else
+    {
+        oled.drawStr(0,40,"CONNECTED");
+        oled.drawStr(0,50,"TO");
+
+        oled.setFont(u8g2_font_04b_03_tr); //<- Mod Font
+        oled.setCursor(0,60);
+        oled.print(ssid);
+
+        oled.setFont(u8g2_font_5x7_tf); //<- Original Font
+        oled.drawStr(0,80,"IP Adress:");
+
+        oled.setFont(u8g2_font_04b_03_tr); //<- Mod Font
+        oled.setCursor(0,90);
+        oled.print(WiFi.localIP());
+        oled.setFont(u8g2_font_5x7_tf); //<- Original Font
+    }  
+    oled_needs_refresh = true;
+}
+
+
+
 //Used just on DEMO
 void oled_wifi_demo()
 {
@@ -1677,7 +1944,7 @@ void oled_ota(char* ssid)
     oled_needs_refresh = true;
 }
 
-void oled_logger_wifi(char* ssid)
+void oled_logger_wifi(String ssid)
 {
     
     oled.clearBuffer();
@@ -1736,9 +2003,6 @@ void oled_logger_wifi_failed()
 
         oled.drawStr(0,80,"COULDNT");  
         oled.drawStr(0,100,"CONNECT");
-        
-        oled.drawStr(0,110,"RESTARTING");
-        oled.drawStr(0,120,"ESP");
     }
 
     oled_needs_refresh = true;
@@ -2043,6 +2307,19 @@ void oled_sd_not_detected()
     oled_needs_refresh = true;    
 }
 
+void oled_sd_error()
+{
+    //changing to normal bigger font
+    oled.setFont(u8g2_font_5x7_tf);
+    oled.clear();
+
+    oled.drawStr(0,50,"SD CARD");
+    oled.drawStr(0,60,"ERROR");
+    oled.drawStr(0,70,"DETECTED");  
+    
+    oled_needs_refresh = true;    
+}
+
 void oled_sd_running_mode_black_box()
 {
     //changing to normal bigger font
@@ -2053,6 +2330,53 @@ void oled_sd_running_mode_black_box()
     oled.drawStr(0,60,"RUNNING");
     oled.drawStr(0,70,"BLACK_BOX");  
     oled.drawStr(0,70,"MODE");  
+    
+    oled_needs_refresh = true;    
+
+}
+
+void oled_ftp_wifi_sd_processing_files()
+{
+    //changing to normal bigger font
+    oled.setFont(u8g2_font_5x7_tf);
+    oled.clear();
+
+    oled.drawStr(0,50,"SD CARD");
+    oled.drawStr(0,70,"PROCESSING");
+    oled.drawStr(0,80,"FILES");  
+        
+    oled_needs_refresh = true;    
+}
+
+void oled_ftp_wifi_forcing_today_file()
+{
+    //changing to normal bigger font
+    oled.setFont(u8g2_font_5x7_tf);
+    oled.clear();
+
+    oled.drawStr(0,50,"FORCING");
+    oled.drawStr(0,60,"TODAY'S");
+    oled.drawStr(0,70,"RECORD");  
+    oled.drawStr(0,80,"TO");  
+    oled.drawStr(0,90,"STORAGE");  
+        
+    oled_needs_refresh = true;    
+
+}
+
+void oled_ftp_wifi_skipping_file()
+{
+    //changing to normal bigger font
+    oled.setFont(u8g2_font_5x7_tf);
+    oled.clear();
+
+    oled.drawStr(0,50,"FILE");
+    oled.drawStr(0,60,"ALREADY");
+    oled.drawStr(0,70,"IN");  
+    oled.drawStr(0,80,"STORAGE");
+
+    oled.drawStr(0,100,"SKIPPING");  
+    oled.drawStr(0,110,"UPLOAD");     
     
     oled_needs_refresh = true;    
 
@@ -2126,43 +2450,47 @@ void oled_black_box_info_on_firebase_task()
     oled.setFont(u8g2_font_5x7_tf);
     oled.clearBuffer();
 
-    oled.drawStr(0,10,"ENGEL_V5");
-    oled.drawStr(0,20,"BLACK_BOX");
+    oled.drawStr(0,10,"BLACK_BOX");
     
-    oled.setCursor(0,30);
+    oled.setCursor(0,20);
     oled.printf("# %d",black_box_log_nr);
 
-    oled.setCursor(0,40);
+    oled.setCursor(0,30);
     oled.printf("V_BAT: %.2f",bat_voltage);
     
-    oled.setCursor(0,50);
+    oled.setCursor(0,40);
     oled.printf("SOC: %d%%",bat_percent);
 
-    oled.setCursor(0,60);
+    oled.setCursor(0,50);
     if(usb_connected)oled.print("USB-IN:YES");
     else oled.print("USB-IN:NO");
 
-    oled.setCursor(0,70);
+    oled.setCursor(0,60);
     if(charging)oled.print("CHARGING:YES");
     else oled.print("CHARGING: NO");
 
-    oled.setCursor(0,80);
+    oled.setCursor(0,70);
     if(low_bat)oled.print("LOW_BAT?:YES");
     else oled.print("LOW_BAT?: NO");
 
-    oled.setCursor(0,90);
+    oled.setCursor(0,80);
     oled.printf("TEMP:%d_C",board_temp);
     
-    oled.setCursor(0,100);
+    oled.setCursor(0,90);
     if(moving)oled.printf("MOVING?:YES");
     else oled.print("MOVING?:NO");
 
-    oled.setCursor(0,110);
+    oled.setCursor(0,100);
     if(dark)oled.printf("LUX:DARK");
     else oled.print("LUX:BRIGHT");
 
-    oled.setCursor(0,120);
+    oled.setCursor(0,110);
     oled.printf("HeartBeat:%d",firebase_heartbeat_count);   
+
+    oled.setCursor(0,120);
+    oled.printf("<Next   Stop>");   
+
+
     
     oled_needs_refresh = true;    
 }
@@ -2281,11 +2609,14 @@ void oled_overall_status()
 
 void oled_dev_info(int screen_nr)
 {
+    #define max_pos 70
+    #define max_acc 5000
+
      //We got the mutex , changing OLED info request to i2c_dev_manager
      switch (screen_nr)
      {
         //if oled_dev_screen_nr == 0 the oled is deactivated 
-        case 0: //Turns off the oled 
+        case oled_dev_off: //Turns off the oled 
         {
             if(firebase_first_loop || oled_needs_clear)
             {
@@ -2296,56 +2627,90 @@ void oled_dev_info(int screen_nr)
         }
         break;
 
-        case 1: 
+        case oled_dev_black_box_info_on_firebase_task: 
         {
             oled_black_box_info_on_firebase_task();
         } 
         break;
 
-        case 2: //GPS
+        case oled_dev_gps: //GPS
         {                                                                
             if(gps_locked)  //Good GPS Signal
             {
-                oled_gps_good_data_template();
+                oled_gps_good_data_template_for_black_box();
                 //Whatever happens we here reset the flag
                 gps_data_logging_needs_refresh = false;
             }
             else 
             {                                    
-                if(gps_initialized) oled_gps_bad_data_template();
+                if(gps_initialized) oled_gps_bad_data_template_for_black_box();
                 else  oled_gps_waiting_data(); 
             }
         }
         break;
 
-        case 3: //CAN
+        case oled_dev_can: //CAN
         {
-            if(can_enabled)oled_can_data_template();
+            //No space for ("<Next exit> but should be understandable")
+            if(can_enabled)oled_can_data_template(); 
             else oled_can_disabled();
         }
         break;
 
         //IMU
         //Axis doesnt matter as is just for the arrow reference
-        case 4: 
+
+        //LEDS are being ontrolled by the task_button_mapper_for_oled_dev_screen_nr() 
+
+        case oled_dev_gyro_x: 
         {
             oled_demo_imu_pos('x'); 
-        }
-        break;
-        
-        case 5: 
-        {
-            oled_demo_imu_acc('x'); 
+            //rgb_leds_imu_pos(false,rgb_leds_brightness,'x',max_pos);
         }
         break;
 
-        case 6: 
+        case oled_dev_gyro_y: 
+        {
+            oled_demo_imu_pos('y'); 
+            //rgb_leds_imu_pos(false,rgb_leds_brightness,'y',max_pos);
+        }
+        break;
+
+        case oled_dev_gyro_z: 
+        {
+            oled_demo_imu_pos('z'); 
+            //rgb_leds_imu_pos(false,rgb_leds_brightness,'z',max_pos);
+        }
+        break;
+
+        case oled_dev_acc_x: 
+        {
+            oled_demo_imu_acc('x'); 
+            rgb_leds_imu_acc(false,rgb_leds_brightness,'x',5000);
+        }
+        break;
+
+        case oled_dev_acc_y: 
+        {
+            oled_demo_imu_acc('y'); 
+            //rgb_leds_imu_acc(false,rgb_leds_brightness,'y',5000);
+        }
+        break;
+
+        case oled_dev_acc_z: 
+        {
+            oled_demo_imu_acc('z'); 
+           //rgb_leds_imu_acc(false,rgb_leds_brightness,'z',5000);
+        }
+        break;
+
+        case oled_dev_overall_status: 
         {
             oled_overall_status(); 
         }
         break;
 
-        case 7: 
+        case oled_dev_ota: 
         {
             oled_ota(ota_ssid); 
         }
@@ -2354,6 +2719,119 @@ void oled_dev_info(int screen_nr)
         //remember to modify the oled_screen_nr_max accordingly 
      } 
 }
+
+
+void oled_ftp_wifi_uploading_file(String path) 
+{
+    oled.setFont(u8g2_font_5x7_tf);
+    oled.clearBuffer();
+    oled.drawStr(0,30,"UPLOADING");
+    oled.drawStr(0,40,"FILE:");
+
+    oled.setCursor(0,60);
+    oled.print(path);
+
+    oled_needs_refresh = true;
+}
+
+void oled_ftp_wifi_processing_chunk(int current, int total)
+{
+    oled.setFont(u8g2_font_5x7_tf);
+    oled.clearBuffer();
+
+    oled.drawStr(0,30,"UPLOADING");
+    oled.drawStr(0,40,"CHUNK");
+    oled.setCursor(0,60);
+    oled.printf("%d/%d", current, total);
+
+    oled_needs_refresh = true;
+}
+
+
+/*
+Prevents extraInfo from overwriting the "part info" area.
+Ensures extra info prints only once unless it’s long enough to need splitting.
+Keeps the layout:
+
+Header → lines 10/20
+Date → line 40
+Part Info → line 50
+Extra Info → line 60 (or split into 60/70)
+*/
+
+void oled_print_uploader_status(const String &header, const String &fileName, const String &extraInfo) 
+{
+    oled.clearDisplay();
+    oled.setFont(u8g2_font_5x7_tf);
+
+    // ---- HEADER handling ----
+    if (header.length() > 10 && header.indexOf(' ') != -1) {
+        int spaceIndex = header.indexOf(' ');
+        String firstPart = header.substring(0, spaceIndex);
+        String secondPart = header.substring(spaceIndex + 1);
+
+        oled.setCursor(0, 10);
+        oled.print(firstPart);
+        oled.setCursor(0, 20);
+        oled.print(secondPart);
+    } else {
+        oled.setCursor(0, 10);
+        oled.print(header);
+    }
+
+    // ---- FILE NAME (date + part) ----
+    String datePart = fileName;
+    String partInfo = "";
+
+    int underscoreIndex = fileName.indexOf("_part");
+    if (underscoreIndex != -1) {
+        datePart = fileName.substring(0, underscoreIndex);  
+        partInfo = fileName.substring(underscoreIndex + 1);
+        int dotIndex = partInfo.indexOf(".txt");
+        if (dotIndex != -1) partInfo.remove(dotIndex);
+    }
+
+    oled.setCursor(0, 40);
+    oled.print(datePart);
+
+    if (partInfo.length() > 0) {
+        oled.setCursor(0, 50);
+        oled.print(partInfo);
+    }
+
+    // ---- EXTRA INFO ----
+    if (extraInfo.length() > 0) {
+        if (extraInfo.length() > 10 && extraInfo.indexOf(' ') != -1) {
+            int spaceIndex = extraInfo.indexOf(' ');
+            String firstExtra = extraInfo.substring(0, spaceIndex);
+            String secondExtra = extraInfo.substring(spaceIndex + 1);
+
+            oled.setCursor(0, 60);
+            oled.print(firstExtra);
+            oled.setCursor(0, 70);
+            oled.print(secondExtra);
+        } else {
+            oled.setCursor(0, 60);
+            oled.print(extraInfo);
+        }
+    }
+
+    oled.display();
+    oled_needs_refresh = true;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -2373,3 +2851,4 @@ oled.drawStr(0,60,"RED:");
 oled.setCursor(30,10);oled.print(servo_tilt_now);
 Serial.print("FPV:");if(fpv){Serial.print("ON");}else{Serial.print("OFF");}Serial.print(" | ");
 */
+

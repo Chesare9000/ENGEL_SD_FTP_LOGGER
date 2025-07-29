@@ -178,7 +178,7 @@ void create_task_i2c_manager() //once created it will automatically run
         "i2c_manager", //Logging Name (Just for ID)
         4096,                //Stack Size 
         NULL,                //Passing Parameters
-        10,                  //Task Priority
+        5,                  //Task Priority
         &i2c_manager_handle
     );
 

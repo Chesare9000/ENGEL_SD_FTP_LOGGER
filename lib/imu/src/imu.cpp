@@ -1058,6 +1058,7 @@ void task_imu(void * parameters)
 }
 
 
+
 void recalibrate_imu_via_i2c_manager(int imu_recalibrate_log_handler_mode)
 {
     if(imu_recalibrate_log_handler_mode > imu_task_log_mode_silent)
@@ -1081,4 +1082,674 @@ void recalibrate_imu_via_i2c_manager(int imu_recalibrate_log_handler_mode)
 
 
 
+
+
+
  
+
+
+
+
+
+int imu_pos_state = 0;
+int imu_old_pos_state = imu_pos_state;
+
+void rgb_leds_imu_pos(bool acc_raw, int brightness, char axis, int max_val)
+{
+    //Serial.printf("\n Y:%f P:%f R:%f ",imu_yaw,imu_pitch,imu_roll);
+
+    if(axis == 'x')
+    {
+        //x>30
+        //Example on max_val = 30;
+        if(imu_pitch > max_val)
+        {
+            imu_pos_state = 1;
+
+            //Blink here constantly
+            //if (imu_pos_state != imu_old_pos_state)
+            {
+                rgb_led_blink_once(0,'r',100,200);
+            } 
+
+            imu_old_pos_state = imu_pos_state;
+        }
+
+        //30>x>15
+        else if(imu_pitch <= max_val && imu_pitch > max_val/2)
+        {
+            imu_pos_state = 2;
+
+            if (imu_pos_state != imu_old_pos_state)
+            {
+                rgb_leds_off();
+                rgb_led_on(0,'r',100);
+            } 
+
+            imu_old_pos_state = imu_pos_state;
+        }
+
+        //15>x>10
+        else if(imu_pitch <= max_val/2 && imu_pitch > max_val/3)
+        {
+            imu_pos_state = 3;
+
+            if (imu_pos_state != imu_old_pos_state)
+            {
+                rgb_leds_off();
+                rgb_led_on(1,'y',100);
+            }
+
+            imu_old_pos_state = imu_pos_state;
+        }
+
+        //10>x>-10 Center 
+        else if(imu_pitch <= max_val/3 && imu_pitch > ((max_val/3)*-1))
+        {
+            imu_pos_state = 4;
+
+            if (imu_pos_state != imu_old_pos_state)
+            {
+                rgb_leds_off();
+                rgb_led_on(2,'g',100);
+            }
+
+            imu_old_pos_state = imu_pos_state;
+        }
+
+        //-10>x>-15
+        else if(imu_pitch <= ((max_val/3)*-1) && imu_pitch > ((max_val/2)*-1))
+        {
+            imu_pos_state = 5;
+
+            if (imu_pos_state != imu_old_pos_state)
+            {
+                rgb_leds_off();
+                rgb_led_on(3,'y',100);
+            }
+
+            imu_old_pos_state = imu_pos_state;
+        }
+
+        //-15>x>-30
+        else if(imu_pitch <= ((max_val/2)*-1) && imu_pitch > ((max_val)*-1))
+        {
+            imu_pos_state = 6;
+
+            if (imu_pos_state != imu_old_pos_state)
+            {
+                rgb_leds_off();
+                rgb_led_on(4,'r',100);
+            }
+
+            imu_old_pos_state = imu_pos_state;
+        }
+
+        //x<-30
+        else if(imu_pitch <= ((max_val)*-1))
+        {
+            imu_pos_state = 7;
+
+            //Blink here constantly
+            //if (imu_pos_state != imu_old_pos_state)
+            {
+                rgb_led_blink_once(4,'r',100,200);
+            }
+
+            imu_old_pos_state = imu_pos_state;
+        }
+    }
+
+    else if(axis == 'y')
+    {
+        //x>30
+        //Example on max_val = 30;
+        if(imu_roll > max_val)
+        {
+            imu_pos_state = 8;
+
+            //Blink here constantly
+            //if (imu_pos_state != imu_old_pos_state)
+            {
+                rgb_led_blink_once(0,'r',100,200);
+            }
+
+            imu_old_pos_state = imu_pos_state;
+        }
+
+        //30>x>15
+        else if(imu_roll <= max_val && imu_roll > max_val/2)
+        {
+            imu_pos_state = 9;
+
+            if (imu_pos_state != imu_old_pos_state)
+            {
+                rgb_leds_off();
+                rgb_led_on(0,'r',100);
+            }
+
+            imu_old_pos_state = imu_pos_state;
+        }
+
+        //15>x>10
+        else if(imu_roll <= max_val/2 && imu_roll > max_val/3)
+        {
+            imu_pos_state = 10;
+
+            if (imu_pos_state != imu_old_pos_state)
+            {
+                rgb_leds_off();
+                rgb_led_on(1,'y',100);
+            }
+
+            imu_old_pos_state = imu_pos_state;
+        }
+
+        //10>x>-10 Center 
+        else if(imu_roll <= max_val/3 && imu_roll > ((max_val/3)*-1))
+        {
+            imu_pos_state = 11;
+
+            if (imu_pos_state != imu_old_pos_state)
+            {
+                rgb_leds_off();
+                rgb_led_on(2,'g',100);
+            }
+
+            imu_old_pos_state = imu_pos_state;
+        }
+
+        //-10>x>-15
+        else if(imu_roll <= ((max_val/3)*-1) && imu_roll > ((max_val/2)*-1))
+        {
+            imu_pos_state = 12;
+
+            if (imu_pos_state != imu_old_pos_state)
+            {
+                rgb_leds_off();
+                rgb_led_on(3,'y',100);
+            }
+
+            imu_old_pos_state = imu_pos_state;
+        }
+
+        //-15>x>-30
+        else if(imu_roll <= ((max_val/2)*-1) && imu_roll > ((max_val)*-1))
+        {
+            imu_pos_state = 13;
+
+            if (imu_pos_state != imu_old_pos_state)
+            {
+                rgb_leds_off();
+                rgb_led_on(4,'r',100);
+            }
+
+            imu_old_pos_state = imu_pos_state;
+        }
+
+        //x<-30
+        else if(imu_roll <= ((max_val)*-1))
+        {
+            imu_pos_state = 14;
+
+            //Blink here constantly
+            //if (imu_pos_state != imu_old_pos_state)
+            {
+                rgb_led_blink_once(4,'r',100,200);
+            }
+
+            imu_old_pos_state = imu_pos_state;
+        }
+    }
+
+    else if(axis == 'z')
+    {
+        //x>30
+        //Example on max_val = 30;
+        if(imu_yaw > max_val)
+        {
+            imu_pos_state = 15;
+
+            //Blink Here
+            if (imu_pos_state != imu_old_pos_state)
+            {
+                rgb_led_blink_once(0,'r',100,200);
+            }
+
+            imu_old_pos_state = imu_pos_state;
+        }
+
+        //30>x>15
+        else if(imu_yaw <= max_val && imu_yaw > max_val/2)
+        {
+            imu_pos_state = 16;
+
+            if (imu_pos_state != imu_old_pos_state)
+            {
+                rgb_leds_off();
+                rgb_led_on(0,'r',100);
+            }
+
+            imu_old_pos_state = imu_pos_state;
+        }
+
+        //15>x>10
+        else if(imu_yaw <= max_val/2 && imu_yaw > max_val/3)
+        {
+            imu_pos_state = 17;
+
+            if (imu_pos_state != imu_old_pos_state)
+            {
+                rgb_leds_off();
+                rgb_led_on(1,'y',100);
+            }
+
+            imu_old_pos_state = imu_pos_state;
+        }
+
+        //10>x>-10 Center 
+        else if(imu_yaw <= max_val/3 && imu_yaw > ((max_val/3)*-1))
+        {
+            imu_pos_state = 18;
+
+            if (imu_pos_state != imu_old_pos_state)
+            {
+                rgb_leds_off();
+                rgb_led_on(2,'g',100);
+            }
+
+            imu_old_pos_state = imu_pos_state;
+        }
+
+        //-10>x>-15
+        else if(imu_yaw <= ((max_val/3)*-1) && imu_yaw > ((max_val/2)*-1))
+        {
+            imu_pos_state = 19;
+
+            if (imu_pos_state != imu_old_pos_state)
+            {
+                rgb_leds_off();
+                rgb_led_on(3,'y',100);
+            }
+
+            imu_old_pos_state = imu_pos_state;
+        }
+
+        //-15>x>-30
+        else if(imu_yaw <= ((max_val/2)*-1) && imu_yaw > ((max_val)*-1))
+        {
+            imu_pos_state = 20;
+
+            if (imu_pos_state != imu_old_pos_state)
+            {
+                rgb_leds_off();
+                rgb_led_on(4,'r',100);
+            }
+
+            imu_old_pos_state = imu_pos_state;
+        }
+
+        //x<-30
+        else if(imu_yaw <= ((max_val)*-1))
+        {
+            imu_pos_state = 21;
+
+            //Blink here constantly
+            //if (imu_pos_state != imu_old_pos_state)
+            {
+                rgb_led_blink_once(4,'r',100,200);
+            }
+
+            imu_old_pos_state = imu_pos_state;
+        }
+    }
+}
+
+
+int imu_acc_state = 0;
+int imu_old_acc_state = imu_acc_state ;
+
+//simplified version of rgb_leds_demo_imu_acc() that wont modify any value , for more parameters refer there
+void rgb_leds_imu_acc(bool acc_raw,int brightness,char axis,int max_val)
+{
+    //used just for the demo
+    int local_imu_acc_x = 0;
+    int local_imu_acc_y = 0;
+    int local_imu_acc_z = 0;
+
+    //TO DO  , maybe later make a local var to not
+    //overwrite acc_raw for compensated on global usage 
+
+    //Iff flag is raised then take the compensated acc. values
+    if(acc_raw)
+    {
+        local_imu_acc_x = imu_acc_x;
+        local_imu_acc_y = imu_acc_y;
+        local_imu_acc_z = imu_acc_z;
+        
+    }
+    else
+    {
+        local_imu_acc_x = imu_acc_comp_grav_x;
+        local_imu_acc_y = imu_acc_comp_grav_y;
+        local_imu_acc_z = imu_acc_comp_grav_z;
+    }
+
+
+
+    //if(imu_acc_comp_grav_x> 100 || imu_acc_comp_grav_x< -100)Serial.printf("\n X:%d Y:%d Z:%d ",imu_acc_comp_grav_x,imu_acc_comp_grav_y,imu_acc_comp_grav_z);
+    //Serial.printf("\n X:%d Y:%d Z:%d ",imu_acc_comp_grav_x,imu_acc_comp_grav_y,imu_acc_comp_grav_z);
+
+    //the effect of the acc is more visible if we dont turn off the leds
+
+    if(axis == 'x')
+    {
+        //x>30
+        if(local_imu_acc_x > max_val)
+        {
+            //Example on max_val = 30;
+
+            imu_acc_state = 1;
+
+            if (imu_acc_state != imu_old_acc_state)
+            {
+                rgb_leds_off();
+                rgb_led_on(0,'r',100);
+            } 
+
+            imu_old_acc_state = imu_acc_state;   
+        }
+
+        //30>x>15
+        else if(local_imu_acc_x <= max_val && local_imu_acc_x > max_val/2)
+        {
+            imu_acc_state = 2;
+
+            if (imu_acc_state != imu_old_acc_state)
+            {
+                rgb_leds_off();
+                rgb_led_on(0,'y',100);
+            } 
+
+            imu_old_acc_state = imu_acc_state;
+        }
+
+        //15>x>10
+        else if(local_imu_acc_x <= max_val/2 && local_imu_acc_x > max_val/3)
+        {
+            imu_acc_state = 3;
+
+            if (imu_acc_state != imu_old_acc_state)
+            {
+                rgb_leds_off();
+                rgb_led_on(1,'g',100);
+            } 
+
+            imu_old_acc_state = imu_acc_state;
+        }
+
+        //10>x>-10 Center 
+        else if(local_imu_acc_x <= max_val/3 && local_imu_acc_x > ((max_val/3)*-1))
+        {
+            imu_acc_state = 4;
+
+            if (imu_acc_state != imu_old_acc_state)
+            {
+                rgb_leds_off();
+                rgb_led_on(2,'g',100);
+            } 
+
+            imu_old_acc_state = imu_acc_state;
+        }
+
+        //-10>x>-15
+        else if(local_imu_acc_x <= ((max_val/3)*-1) && local_imu_acc_x > ((max_val/2)*-1))
+        {
+            imu_acc_state = 5;
+
+            if (imu_acc_state != imu_old_acc_state)
+            {
+                rgb_leds_off();
+                rgb_led_on(3,'g',100);
+            } 
+
+            imu_old_acc_state = imu_acc_state;
+        }
+
+        //-15>x>-30
+        else if(local_imu_acc_x <= ((max_val/2)*-1) && local_imu_acc_x > ((max_val)*-1))
+        {
+            imu_acc_state = 6;
+
+            if (imu_acc_state != imu_old_acc_state)
+            {
+                rgb_leds_off();
+                rgb_led_on(4,'y',100);
+            } 
+
+            imu_old_acc_state = imu_acc_state;
+        }
+
+        //x<-30
+        else if(local_imu_acc_x <= ((max_val)*-1))
+        {
+            imu_acc_state = 7;
+
+            //Blink here
+            if (imu_acc_state != imu_old_acc_state)
+            {
+                rgb_leds_off();
+                rgb_led_on(4,'r',100);
+            } 
+
+            imu_old_acc_state = imu_acc_state;
+        }
+    }
+
+    else if(axis == 'y')
+    {
+        //y>30
+        if(local_imu_acc_y > max_val)
+        {
+            imu_acc_state = 8;
+
+            //Blink Here
+            if (imu_acc_state != imu_old_acc_state)
+            {
+                rgb_leds_off();
+                rgb_led_on(4,'r',100);
+            } 
+
+            imu_old_acc_state = imu_acc_state;            
+        }
+
+        //30>y>15
+        else if(local_imu_acc_y <= max_val && local_imu_acc_y > max_val/2)
+        {
+            imu_acc_state = 9;
+
+            if (imu_acc_state != imu_old_acc_state)
+            {
+                rgb_leds_off();
+                rgb_led_on(0,'r',100);
+            } 
+
+            imu_old_acc_state = imu_acc_state;
+        }
+
+        //15>y>10
+        else if(local_imu_acc_y <= max_val/2 && local_imu_acc_y > max_val/3)
+        {
+            imu_acc_state = 10;
+
+            if (imu_acc_state != imu_old_acc_state)
+            {
+                rgb_leds_off();
+                rgb_led_on(1,'y',100);
+            } 
+
+            imu_old_acc_state = imu_acc_state;
+        }
+
+        //10>y>-10 Center 
+        else if(local_imu_acc_y <= max_val/3 && local_imu_acc_y > ((max_val/3)*-1))
+        {
+            imu_acc_state = 11;
+
+            if (imu_acc_state != imu_old_acc_state)
+            {
+                rgb_leds_off();
+                rgb_led_on(2,'g',100);
+            } 
+
+            imu_old_acc_state = imu_acc_state;
+        }
+
+        //-10>y>-15
+        else if(local_imu_acc_y <= ((max_val/3)*-1) && local_imu_acc_y > ((max_val/2)*-1))
+        {
+            imu_acc_state = 12;
+
+            if (imu_acc_state != imu_old_acc_state)
+            {
+                rgb_leds_off();
+                rgb_led_on(3,'y',100);
+            } 
+
+            imu_old_acc_state = imu_acc_state;
+        }
+
+        //-15>y>-30
+        else if(local_imu_acc_y <= ((max_val/2)*-1) && local_imu_acc_y > ((max_val)*-1))
+        {
+            imu_acc_state = 13;
+
+            if (imu_acc_state != imu_old_acc_state)
+            {
+                rgb_leds_off();
+                rgb_led_on(4,'r',100);
+            } 
+
+            imu_old_acc_state = imu_acc_state;
+        }
+
+        //y<-30
+        else if(local_imu_acc_y <= ((max_val)*-1))
+        {
+            imu_acc_state = 14;
+
+            //Blink here consstantly
+
+            //if (imu_acc_state != imu_old_acc_state)
+            {
+                rgb_leds_off();
+                rgb_led_on(4,'r',100);
+            } 
+
+            imu_old_acc_state = imu_acc_state;
+        }
+    }
+
+    else if(axis == 'z')
+    {
+        //z>30
+        if(local_imu_acc_z > max_val)
+        {
+            imu_acc_state = 15;
+
+            //Blink Here Constantly
+            //if (imu_acc_state != imu_old_acc_state)
+            {
+                rgb_leds_off();
+                rgb_led_on(4,'r',100);
+            } 
+
+            imu_old_acc_state = imu_acc_state;
+        }
+
+        //30>z>15
+        else if(local_imu_acc_z <= max_val && local_imu_acc_z > max_val/2)
+        {
+            imu_acc_state = 16;
+
+            if (imu_acc_state != imu_old_acc_state)
+            {
+                rgb_leds_off();
+                rgb_led_on(0,'r',100);
+            } 
+
+            imu_old_acc_state = imu_acc_state;
+        }
+
+        //15>z>10
+        else if(local_imu_acc_z <= max_val/2 && local_imu_acc_z > max_val/3)
+        {
+            imu_acc_state = 17;
+
+            if (imu_acc_state != imu_old_acc_state)
+            {
+                rgb_leds_off();
+                rgb_led_on(1,'y',100);
+            } 
+
+            imu_old_acc_state = imu_acc_state;
+        }
+
+        //10>z>-10 Center 
+        else if(local_imu_acc_z <= max_val/3 && local_imu_acc_z > ((max_val/3)*-1))
+        {
+            imu_acc_state = 18;
+
+            if (imu_acc_state != imu_old_acc_state)
+            {
+                rgb_leds_off();
+                rgb_led_on(2,'g',100);
+            } 
+
+            imu_old_acc_state = imu_acc_state;
+        }
+
+        //-10>z>-15
+        else if(local_imu_acc_z <= ((max_val/3)*-1) && local_imu_acc_z > ((max_val/2)*-1))
+        {
+            imu_acc_state = 19;
+
+            if (imu_acc_state != imu_old_acc_state)
+            {
+                rgb_leds_off();
+                rgb_led_on(3,'y',100);
+            } 
+
+            imu_old_acc_state = imu_acc_state;
+        }
+
+        //-15>z>-30
+        else if(local_imu_acc_z <= ((max_val/2)*-1) && local_imu_acc_z > ((max_val)*-1))
+        {
+            imu_acc_state = 20;
+
+            if (imu_acc_state != imu_old_acc_state)
+            {
+                rgb_leds_off();
+                rgb_led_on(4,'r',100);
+            } 
+
+            imu_old_acc_state = imu_acc_state;
+        }
+
+        //z<-30
+        else if(local_imu_acc_z <= ((max_val)*-1))
+        {
+            imu_acc_state = 21;
+
+            //Blink here Constantly
+            //if (imu_acc_state != imu_old_acc_state)
+            {
+                rgb_leds_off();
+                rgb_led_on(4,'r',100);
+            } 
+
+            imu_old_acc_state = imu_acc_state;
+        }
+    }
+}

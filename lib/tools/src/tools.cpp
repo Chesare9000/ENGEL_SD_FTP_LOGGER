@@ -248,7 +248,7 @@ void check_movement() //This is just for the ESP Pin attached to the Movement Sw
 {
   if(movement_detected && moving)//Movement triggered
   {
-    if(log_enabled)Serial.print("\n---Moving !");
+    //if(log_enabled)Serial.print("\n---Moving !");
     //disable the interruption to avoid spamming
     mov_switch_interrupt_disable();
     movement_detected = false;    
@@ -269,7 +269,7 @@ void check_movement() //This is just for the ESP Pin attached to the Movement Sw
     if (mov_switch_check_counter > mov_switch_check_max_iterations )
     {
       moving = false;
-      if(log_enabled)Serial.print(" ---Movement Stopped---");
+      //if(log_enabled)Serial.print(" ---Movement Stopped---");
       mov_switch_check_counter = 0;
       //reenable interruption to get triggers again
       mov_switch_interrupt_enable();      

@@ -3,6 +3,12 @@
 #include <can.h>
 #include <oled.h>
 #include <tools.h>
+#include <vars.h>
+#include <buzzer.h>
+
+//This is for the mubea heavy , TODO later convert into a macro or similar ad change if somother vehicle is chosen
+int vehicle_id = mubea_heavy_cargo; 
+
 
 #define CAN_TX  12  //TODO CHANGE LATER THIS GPIOS , I DONT LIKE THE BOOTSTRAPING ONES
 #define CAN_RX   36  //TODO CHANGE LATER THIS GPIOS , I DONT LIKE THE BOOTSTRAPING ONES
@@ -69,8 +75,14 @@ bool can_init(int can_log_mode)
   {
     if(can_log_mode > can_log_mode_silent)
     {
-      Serial.println("\nCAN bus started!");
+      Serial.println("\n---CAN bus started!");
     }
+
+     //seting first loop for all frames
+    mubea_can_hex_motor_gen_data_first_loop = true;
+    mubea_can_hex_battery_data_first_loop = true;
+    mubea_can_hex_vehicle_part_1_first_loop = true;
+    mubea_can_hex_vehicle_part_2_first_loop =true;
     
     return true;
   } 
@@ -78,18 +90,48 @@ bool can_init(int can_log_mode)
   {
     if(can_log_mode > can_log_mode_silent)
     {
-      Serial.println("\nCAN bus failed!");
+      Serial.println("\n---CAN bus failed!");
     }
     oled_can_not_detected();
+    buzzer_error();
     return false;
   }
+}
 
-  //seting first loop for all frames
-  mubea_can_hex_motor_gen_data_first_loop = true;
-  mubea_can_hex_battery_data_first_loop = true;
-  mubea_can_hex_vehicle_part_1_first_loop = true;
-  mubea_can_hex_vehicle_part_2_first_loop =true;
+bool can_send_activation_message() 
+{
+  switch(vehicle_id)
+  {
+    case mubea_heavy_cargo:
+    {
+      CanFrame txFrame;
+      txFrame.identifier = 0x100;   // Required CAN ID
+      txFrame.extd = 0;             // Standard frame
+      txFrame.rtr = 0;              // Data frame
+      txFrame.data_length_code = 8; // 8 bytes
 
+      // Fill with zeros
+      for (int i = 0; i < 8; i++) txFrame.data[i] = 0;
+
+      // Set Byte 3, Bit 3 (bit numbering: 0 = LSB)
+      txFrame.data[3] |= (1 << 3);
+
+      if (ESP32Can.writeFrame(txFrame)) 
+      {
+        if(log_enabled) Serial.println("✅ --- Activation CAN frame sent (ID: 0x100, Byte3.Bit3=1).");
+        return true;
+      } 
+      else 
+      {
+          if(log_enabled) Serial.println("❌ --- Failed to send activation CAN frame.");
+          buzzer_error();
+          return false;
+      }
+    }
+    break;
+
+    //Here more cases if needed
+  }    
 }
 
 void can_poll(int can_log_mode)

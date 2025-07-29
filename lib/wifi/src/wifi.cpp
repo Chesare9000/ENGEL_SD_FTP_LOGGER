@@ -98,7 +98,7 @@ bool wifi_connect()
   Serial.println(WiFi.localIP());                     // show IP address that the ESP32 has received from router
   
   if(oled_enabled)oled_wifi();
-  
+
   //update the RTC as well
   update_time_via_wifi();
 
@@ -106,17 +106,17 @@ bool wifi_connect()
   return true;
 }
 
-bool wifi_connect_to(char* ssid, char* pass ) 
+bool wifi_connect_to(String ssid, String pass ) 
 {
   int counter = 0;
 
   //wifi_status = wifi_status_off;
 
-  if(oled_enabled)oled_wifi();
+  if(oled_enabled)oled_connecting_wifi(ssid,pass);
 
   WiFi.begin(ssid,pass);
   wifi_status = wifi_status_connecting;
-  if(oled_enabled)oled_wifi();
+  if(oled_enabled)oled_connecting_wifi(ssid,pass);
   // print SSID to the serial interface for debugging  
   if(log_enabled)
   {
@@ -145,11 +145,11 @@ bool wifi_connect_to(char* ssid, char* pass )
   Serial.println(WiFi.localIP());                     // show IP address that the ESP32 has received from router
   
   if(oled_enabled)oled_wifi();
-  wifi_connected = true;
 
   //update the RTC as well
   update_time_via_wifi();
 
+  wifi_connected = true;
   return true;
 }
 

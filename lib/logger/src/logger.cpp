@@ -17,8 +17,10 @@
 
 #include <WiFi.h>
 #include <WiFiClient.h>
+#include <nvs.h>
 
-#include <storage_via_wifi.h>
+bool rgb_active_for_logger  = true;
+
 
 bool task_logger_sd_ftp_running = false;
 
@@ -28,13 +30,11 @@ bool task_logger_ms_selector_running = false;
 
 bool task_button_mapper_for_oled_dev_screen_nr_running = false;
 
-bool logger_mode_active = false;
-
 int wifi_selected = 0;
 
-//default is cesar
-char* logger_wifi_ssid = "cesar";
-char* logger_wifi_password = "cesar1234";
+//defaults
+String logger_wifi_ssid = "wifi";
+String logger_wifi_password = "wifi1234";
 
 //Logger Task (SD+FTP) version--------------------------------- 
 
@@ -52,14 +52,11 @@ void create_task_logger_sd_ftp() //once created it will automatically run
     (
         task_logger_sd_ftp,           //Function Name (must be a while(1))
         "task_logger_sd_ftp", //Logging Name
-        4096,                //Stack Size
+        8192,                //Stack Size
         NULL,                //Passing Parameters
-        5,                   //Task Priority
+        8,                   //Task Priority
         &task_logger_sd_ftp_handle
     );   
-
-    //Started at least once and will indicate the mode in where we are atm
-    logger_mode_active = true;
 
     task_logger_sd_ftp_running = true;
 
@@ -102,12 +99,12 @@ void task_logger_sd_ftp(void * parameters)
     //MENU BASED TASK 
 
     if(log_enabled)Serial.println("Running task_logger_sd_ftp ");
-    wait(100);  
-
+    
     buzzer_ok();
-    oled_clear();
 
-    //Relation Cursor->Mode
+    wait(500); 
+
+    //Relation Cursor-> Mode
     #define wifi_list    50
     #define wifi_connect 60
     #define logger_ms    70
@@ -123,14 +120,17 @@ void task_logger_sd_ftp(void * parameters)
     btn_1_interr_enable_on_press();
     btn_2_interr_enable_on_press();
 
-    oled_dev_mode_enabled = false; //This tassk manage its own oled fns.
+    //Getting wifi credentials from NVS
+    nvs_get_logger_wifi_credentials(nvs_log_mode_verbose);
+    
+    oled_dev_mode_enabled = false; //This task manage its own oled fns.
 
     while(1)
     {
         if(!task_logger_sd_ftp_running)
         {
             if(log_enabled) Serial.print(" \n --- KILLING task_logger_sd_ftp ! ");
-            wait(00);
+            wait(500);
             vTaskDelete(NULL);
         }
 
@@ -199,11 +199,39 @@ void task_logger_sd_ftp(void * parameters)
                 
                 case start_logger:  
                 { 
+                   
                     Serial.print("start_logger\n"); 
+
+                    oled_black_box_starting();
+
+                    buzzer_drive_click();
+
+                    wait(1000);
+
+                    if (WiFi.status() != WL_CONNECTED)
+                    {
+                        if(!wifi_connect_to(logger_wifi_ssid,logger_wifi_password))
+                        {
+                            Serial.print("ERROR : WIFI COULDNT CONNECT,EXITING");
+                            firebase_file_initialized = false;
+                            ftp_wifi_running = false;
+                            
+                            oled_logger_wifi_failed();
+                            buzzer_error();
+
+                            wait(3000);
+                            cursor_position = 50;
+                            menu_needs_refresh = true;
+                            btn_1_interr_enable_on_press();
+                            btn_2_interr_enable_on_press();
+                    
+                            break;
+                        }
+                    } 
                                        
                     
                     if(!rtc_calibrated)
-                    {
+                    {                    
                         if(update_time_via_wifi())
                         {
                            Serial.println("\n--- RTC Calibrated ---\n");
@@ -214,15 +242,13 @@ void task_logger_sd_ftp(void * parameters)
                             //Serial.println("\n--- Retry?->BTN_1 | Proceed?->BTN 2 ---\n");
                             Serial.println("\n--- Returning to Menu ---\n");
 
-                            oled_clear();
+                            wait(1000);
 
                             buzzer_error();
 
-                            wait(500);
-
                             oled_error_rtc_not_calibrated();
 
-                            wait(3000);
+                            wait(2000);
 
                             cursor_position = 50;
 
@@ -232,7 +258,6 @@ void task_logger_sd_ftp(void * parameters)
                             btn_2_interr_enable_on_press();
                         }
                     }
-
                     
                     if(rtc_calibrated)
                     {
@@ -246,13 +271,17 @@ void task_logger_sd_ftp(void * parameters)
                         //For all cases (Wifi and LTE)
                         Serial.println("\n---Turning ON BLACK BOX ---\n");
 
+                        buzzer_ok();                       
+
                         create_task_sd();
+
+                        create_task_button_mapper_for_oled_dev_screen_nr();//For the menu
+
+                        wait(3000);
 
                         //we will need the oled in developer mode so acctivating here
                         oled_dev_mode_enabled = true;
-                        oled_dev_screen_nr = 1; //Blacck_Box Screen
-
-                        create_task_button_mapper_for_oled_dev_screen_nr();
+                        oled_dev_screen_nr = 1; //Black_Box Screen
 
                         //Killing this task_logger_sd_ftp as well
                         task_logger_sd_ftp_running = false;
@@ -281,29 +310,31 @@ void task_logger_sd_ftp(void * parameters)
                 }
                                     
                 
-                case ftp_wifi:  //MUST BE ALREADY CONNECTED TO WIFI
+                case ftp_wifi:  
                 
                 {       
                     Serial.print("ftp_wifi\n");  
 
-                   
+                    //here make an oled for confitming 
+
+                    
+                    ftp_wifi_running = true;
+
+                    
+
+
+                    
+                    i2c_manager_running = false;
+                    
+                    wait(500);
+
                     oled_starting_ftp_via_wifi();
 
-                    //This task generates a stack overflow so was changed by a flag to the main loop()
-                    //TODO: revisit and find the problem here
+                    if(!i2c_manager_running)oled_refresh();
 
-                    //This is temporal and must be reworked
-                    //This flag will trigger the respone on loop();
-                    task_ftp_wifi_running = true;
-
-                    //create_task_ftp_wifi();    
-
-
-                    
-                
-                    //Killing task
+                    //Killing this task_logger_sd_ftp as well
                     task_logger_sd_ftp_running = false;
-                    
+                
                     break; 
                 }
                 
@@ -477,7 +508,7 @@ void task_wifi_selector(void * parameters)
         wifi_off(); 
         WiFi.disconnect(true); // Disconnect from any previous WiFi connection
         WiFi.mode(WIFI_OFF); // Set WiFi mode to OFF
-        wait(100);
+        wait(1000);
 
     } 
 
@@ -504,7 +535,6 @@ void task_wifi_selector(void * parameters)
             
             //wipe the screen
             
-
             switch(cursor_position)
             {
                 case cesar:  
@@ -517,8 +547,8 @@ void task_wifi_selector(void * parameters)
                     
 
 
-                    logger_wifi_ssid = "cesar";
-                    logger_wifi_password = "cesar1234"; 
+                    logger_wifi_ssid = "wifi";
+                    logger_wifi_password = "wifi1234"; 
 
                     wifi_selected = true;
 
@@ -536,8 +566,8 @@ void task_wifi_selector(void * parameters)
                     
                     
                     
-                    logger_wifi_ssid = "logger";
-                    logger_wifi_password = "logger"; 
+                    logger_wifi_ssid = "marvin";
+                    logger_wifi_password = "marvin1234"; 
 
                     wifi_selected = true;
 
@@ -548,12 +578,8 @@ void task_wifi_selector(void * parameters)
                 { 
                     Serial.print("MOTIONLAB\n");  
                     
-                    //TODO
-                    
-                    
-                    
-                    logger_wifi_ssid = "logger";
-                    logger_wifi_password = "logger"; 
+                    logger_wifi_ssid = "Motionlab-Member";
+                    logger_wifi_password = "always.in.motion"; 
 
                     wifi_selected = true;
 
@@ -592,9 +618,8 @@ void task_wifi_selector(void * parameters)
                     break; 
                 }              
 
-                default: {Serial.printf("\n ERROR -> VAL: ",cursor_position); break; }
+                default: {Serial.printf("\n ERROR -> VAL: %d NOT VALID ",cursor_position); break; }
             }
-
         }
 
         //Select Next Option
@@ -642,7 +667,10 @@ void task_wifi_selector(void * parameters)
 
         if(wifi_selected)
         {
+            Serial.print("\n---Saving New Credentials as Default to NVS");
+            nvs_set_logger_wifi_credentials(logger_wifi_ssid,logger_wifi_password,nvs_log_mode_verbose);
 
+            Serial.print("\n---Connecting to Wifi using new credentials");
             WiFi.mode(WIFI_STA);
             WiFi.begin(logger_wifi_ssid, logger_wifi_password);
             Serial.println("");
@@ -682,13 +710,10 @@ void task_wifi_selector(void * parameters)
             Serial.print("IP address: ");
             Serial.println(WiFi.localIP());
 
-            //update the RTC as well
-            update_time_via_wifi();
-
             //TODO later add more interesting things to the OLED_OTA
             oled_logger_wifi(logger_wifi_ssid);
             buzzer_ok();
-            wait(100);
+            wait(1000);
 
             //killing the task and returning to menu
             task_wifi_selector_running = false;
@@ -945,7 +970,7 @@ void task_logger_ms_selector(void * parameters)
 
 
 
-
+//This task will alsso manage the leds for the imu so they arre as fast as possible
 
 //task_button_mapper_for_oled_dev_screen_nr ------------------------------------------------
 
@@ -981,12 +1006,12 @@ void  task_button_mapper_for_oled_dev_screen_nr_declare()
     //This Taks will use the following I2C_Devs
     
     //imu_needed++;
-    //rgb_needed++;
+    rgb_needed++;  //for the imu values
     //temp_needed++;
     //lux_needed++;
     //rtc_needed++;
     //fuelgauge_needed++;
-    oled_needed++;
+    //oled_needed++;
 }
 
 void task_button_mapper_for_oled_dev_screen_nr_release()
@@ -997,12 +1022,12 @@ void task_button_mapper_for_oled_dev_screen_nr_release()
     //This Taks will release the following I2C_Devs
     
     //imu_needed--;
-    //rgb_needed--;
+    rgb_needed--;
     //temp_needed--;
     //lux_needed--;
     //rtc_needed--;
     //fuelgauge_needed--;
-    oled_needed--;
+    //oled_needed--;
 }
 
 void task_button_mapper_for_oled_dev_screen_nr(void * parameters)
@@ -1033,16 +1058,12 @@ void task_button_mapper_for_oled_dev_screen_nr(void * parameters)
         if(btn_2.is_pressed) 
         {
             task_button_mapper_for_oled_dev_screen_nr_running = false;
-            oled_clear();
-            wait_for_btn_2_release(); 
-            oled_logger_blak_box_killed();       
+            wait_for_btn_2_release();           
         }
 
         //Select Next Option
         if (btn_1.is_pressed) //Next Pattern was selected
-        {
-            buzzer_drive_click();
-             
+        {             
             btn_1_interr_disable();
             btn_2_interr_disable();
 
@@ -1059,7 +1080,69 @@ void task_button_mapper_for_oled_dev_screen_nr(void * parameters)
             btn_2_interr_enable_on_press(); //EXIT
         }
 
-        else wait(10);
+        //we use the global var that is being updated in real-time
+        //to control the leds when the system is on 
+        switch (oled_dev_screen_nr)
+        {
+            #define max_pos 70
+            #define max_acc 5000
+
+            case oled_dev_gyro_x: 
+            {
+               
+                rgb_leds_imu_pos(false,rgb_leds_brightness,'x',max_pos);
+                if(!rgb_active_for_logger ) rgb_active_for_logger  = true;
+            }
+            break;
+
+            case oled_dev_gyro_y: 
+            {
+                rgb_leds_imu_pos(false,rgb_leds_brightness,'y',max_pos);
+                if(!rgb_active_for_logger ) rgb_active_for_logger  = true;
+            }
+            break;
+
+            case oled_dev_gyro_z: 
+            {
+                rgb_leds_imu_pos(false,rgb_leds_brightness,'z',max_pos);
+                if(!rgb_active_for_logger ) rgb_active_for_logger  = true;
+            }
+            break;
+
+            case oled_dev_acc_x: 
+            {
+                rgb_leds_imu_acc(false,rgb_leds_brightness,'x',5000);
+                if(!rgb_active_for_logger ) rgb_active_for_logger  = true;
+            }
+            break;
+
+            case oled_dev_acc_y: 
+            {
+                rgb_leds_imu_acc(false,rgb_leds_brightness,'y',5000);
+                if(!rgb_active_for_logger ) rgb_active_for_logger  = true;
+            }
+            break;
+
+            case oled_dev_acc_z: 
+            {
+                rgb_leds_imu_acc(false,rgb_leds_brightness,'z',5000);
+                if(!rgb_active_for_logger ) rgb_active_for_logger  = true;
+            }
+            break;
+
+            default: 
+            {
+                if(rgb_active_for_logger)
+                {
+                    rgb_leds_off();
+                    rgb_active_for_logger  = false;
+                } 
+            }
+            break;
+            //remember to modify the oled_screen_nr_max accordingly 
+        } 
+        
+        wait(100);
     }
 }
 
@@ -1067,122 +1150,3 @@ void task_button_mapper_for_oled_dev_screen_nr(void * parameters)
 //al iniciar logger decir que estamos imprimiendo wifi
 
 //make more precise Hz and change to that for the refresh rate considering the processing times
-
-
-
-
-
-//task_ftp_wifi ------------------------------------------------
-
-//will connect to the given hotspot and upload all the data 
-
-//NOT USED DUE TO A ERROR TRIGGERING TODO check it later 
-
-bool task_ftp_wifi_running = false;
-
-TaskHandle_t task_ftp_wifi_handle = NULL;
-
-void create_task_ftp_wifi() //once created it will automatically run
-{
-    if(log_enabled) Serial.print("\n--creating task_ftp_wifi--");
-    wait(100);
-    
-    task_ftp_wifi_declare();
-    wait(100);
-
-    xTaskCreate
-    (
-        task_ftp_wifi,      //Function Name (must be a while(1))
-        "task_ftp_wifi",    //Logging Name
-        8192,          //Stack Size
-        NULL,               //Passing Parameters    
-        5,                  //Task Priority
-        &task_ftp_wifi_handle //Handle
-    );   
-
-    task_ftp_wifi_running = true;
-
-    if(log_enabled) Serial.print("-- done --\n");
-}
-
-void  task_ftp_wifi_declare()
-{
-    if(log_enabled)Serial.print("\ntask_ftp_wifi_declared\n");
-    wait(100);
-    //This Taks will use the following I2C_Devs
-    
-    //imu_needed++;
-    //rgb_needed++;
-    //temp_needed++;
-    //lux_needed++;
-    rtc_needed++;
-    //fuelgauge_needed++;
-    oled_needed++;
-}
-
-void task_ftp_wifi_release()
-{
-    if(log_enabled)Serial.print("\ntask_ftp_wifi_released\n");
-    wait(100);
-    
-    //This Taks will release the following I2C_Devs
-    
-    //imu_needed--;
-    //rgb_needed--;
-    //temp_needed--;
-    //lux_needed--;
-    rtc_needed--;
-    //fuelgauge_needed--;
-    oled_needed--;
-}
-
-void task_ftp_wifi(void * parameters)
-{   
-    wait(100);
-    
-    if(log_enabled)Serial.println("---Running task_ftp_wifi");
-
-    unsigned long firebaseInitMillis = millis();
-    
-    while(1)
-    {
-        if(!task_ftp_wifi_running)
-        {
-            if(log_enabled) Serial.print(" \n --- KILLING task_ftp_wifi ");
-
-            task_ftp_wifi_release();
-
-            //firebase_file_deinit();
-
-            if(log_enabled) Serial.print(" \n --- waiting for firebase_file_deinitialize()");
-
-            while(firebase_file_initialized)
-            {
-                wait(10);
-                if(!firebase_file_initialized)break;
-            }
-
-            if(log_enabled) Serial.print(" \n---returning to menu!---");
-                
-            create_task_logger_sd_ftp();
-
-            vTaskDelete(NULL);
-        }
-
-        if(firebase_file_initialized) 
-        {
-            //run_storage_via_wifi();
-        }
-
-        else if (millis() - firebaseInitMillis > 3000)
-        {
-            firebaseInitMillis = millis();
-            Serial.println("\n---Firebase need Initialization ---\n");    
-            wait(500);
-            //firebase_file_init(logger_wifi_ssid , logger_wifi_password);
-        }  
-
-        wait(10);
-        
-    }
-}

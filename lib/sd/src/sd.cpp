@@ -13,10 +13,6 @@
 #include <oled.h>
 #include <buzzer.h>
 
-#include <logger.h>
-
-#include <oled.h>
-
 
 //Setting correct pins to the SD
 int esp_pin_sd_v_miso = 19;
@@ -181,7 +177,7 @@ void task_sd_i2c_declare()
     //This Taks will use the following I2C_Devs
 
     imu_needed++;
-    //rgb_needed++;
+    rgb_needed++; //for the imu demo on oled_dev_screen
     temp_needed++;
     lux_needed++;
     rtc_needed++;
@@ -199,7 +195,7 @@ void task_sd_i2c_release()
     //This Taks will release the following I2C_Devs
     
     imu_needed--; 
-    //rgb_needed--;
+    rgb_needed--;
     temp_needed--;
     lux_needed--;
     rtc_needed--;
@@ -222,7 +218,6 @@ void task_sd(void * parameters)
     {
         Serial.print("\n\n------ERROR: SD Not Detected -----");
         Serial.print("\n------Retrying in 5 seconds -----");
-        oled_logger_error_on_sd();
         wait(5000);
         sd_initialized = sd_init();        
     }
@@ -236,24 +231,8 @@ void task_sd(void * parameters)
         black_box_running = false;
         //Here close the SD before exiting
 
-        Serial.print("\n---task_sd terminated ----");
-       
+        Serial.print("---\n task_sd terminated ----");
 
-        if (logger_mode_active)
-        {
-            Serial.print("\n---Returning to Menu----");
-            oled_dev_mode_enabled = false;
-            oled_clear();
-            wait(1000);
-            oled_logger_error_on_sd();
-            wait(3000);
-
-            if(task_button_mapper_for_oled_dev_screen_nr_running)task_button_mapper_for_oled_dev_screen_nr_running =false;
-
-            create_task_logger_sd_ftp();
-        }
-
-        //Kill this task
         vTaskDelete(NULL); 
     }
 
@@ -438,7 +417,6 @@ bool sd_init()
     if(!SD.begin())
     {
         Serial.println("\n---Card Mount Failed");
-        buzzer_error();
         return false;
     }
 
@@ -1342,7 +1320,7 @@ int print_sd_log_folder_content()
 {
     int total_files = 0;
 
-    Serial.println("Listing .txt files in SD card under /logs:");
+    Serial.println("Listing .txt files in /logs:");
     File dir = SD.open("/logs");
     File file = dir.openNextFile();
     while (file) 
@@ -1366,120 +1344,6 @@ int print_sd_log_folder_content()
 //LATER ADD THE REGISTERED HEAVY BREAKING ETC 
 
 
-void splitFileIntoChunksIfNeeded(
-    const String &filePath,
-    std::vector<String> &partFiles,
-    size_t maxPartSizeBytes,
-    const std::set<String> &existingRemoteFiles
-)
-{
-    // 🧹 Step 1: Clean up leftover part files
-    File logDir = SD.open("/logs");
-    if (logDir && logDir.isDirectory()) 
-    {
-        File entry = logDir.openNextFile();
-        while (entry) 
-        {
-            String name = entry.name();
-            if (!entry.isDirectory() && name.endsWith(".txt") &&
-                name.indexOf("_part") != -1) 
-            {
-                String fullPath = "/logs/" + name;
-                Serial.printf("🧹 Removing leftover chunk: %s\n", name.c_str());
-                SD.remove(fullPath.c_str());
-            }
-            entry = logDir.openNextFile();
-        }
-        logDir.close();
-    }
 
-    // 🟢 Step 2: Check if splitting is needed
-    File inputFile = SD.open(filePath.c_str());
-    if (!inputFile) 
-    {
-        Serial.printf("\n❌ Could not open file: %s\n", filePath.c_str());
-        return;
-    }
 
-    size_t totalSize = inputFile.size();
-    if (totalSize <= maxPartSizeBytes) 
-    {
-        Serial.printf("\n✅ %s is under threshold → upload directly.\n", filePath.c_str());
-        partFiles.push_back(filePath);
-        inputFile.close();
-        return;
-    }
 
-    // 📦 Step 3: Setup for chunking
-    float totalSizeMB = float(totalSize) / 1000000.0;
-    float thresholdMB = float(maxPartSizeBytes) / 1000000.0;
-    size_t totalParts = (totalSize + maxPartSizeBytes - 1) / maxPartSizeBytes;
-
-    Serial.printf("\n📦 File: %s is %.2f MB → larger than %.2f MB threshold.\nWill be split into %d parts.\n",
-                  filePath.c_str(), totalSizeMB, thresholdMB, totalParts);
-
-    String fileName = filePath.substring(filePath.lastIndexOf("/") + 1);
-    String baseName = fileName.substring(0, fileName.lastIndexOf("."));
-    String ext = fileName.substring(fileName.lastIndexOf("."));
-
-    size_t partNumber = 1;
-    size_t bytesWritten = 0;
-    File partFile;
-    unsigned long timer = millis();
-
-    size_t partIndex = 1;
-    size_t drained = 0;
-
-    while (inputFile.available()) 
-    {
-        // Build the part name before doing anything else
-        String partName = baseName + "_part" + String(partIndex) + "_of_" + String(totalParts) + ext;
-
-        if (existingRemoteFiles.find(partName) != existingRemoteFiles.end()) 
-        {
-            Serial.printf("✅ Skipping chunk already uploaded: %s\n", partName.c_str());
-
-            // Efficient skip without creating a file
-            char tempBuf[512];
-            size_t skipped = 0;
-            while (inputFile.available() && skipped < maxPartSizeBytes) 
-            {
-                size_t len = inputFile.readBytesUntil('\n', tempBuf, sizeof(tempBuf));
-                skipped += len + 1;  // newline
-            }
-
-            partIndex++;
-            continue;
-        }
-
-        // 🔽 Create part file and write
-        String tempPath = "/logs/" + baseName + "_part" + String(partIndex) + ext;
-        File partFile = SD.open(tempPath, FILE_WRITE);
-        if (!partFile) 
-        {
-            Serial.printf("❌ Could not create: %s\n", tempPath.c_str());
-            break;
-        }
-
-        size_t written = 0;
-        while (inputFile.available() && written < maxPartSizeBytes) 
-        {
-            String line = inputFile.readStringUntil('\n');
-            partFile.print(line + "\n");
-            written += line.length() + 1;
-        }
-
-        partFile.close();
-        Serial.printf("✅ Created chunk: %s (%.2f KB)\n", tempPath.c_str(), written / 1000.0);
-
-        // ✅ Rename
-        String finalPath = "/logs/" + partName;
-        if (SD.exists(finalPath)) SD.remove(finalPath);
-        SD.rename(tempPath, finalPath);
-        partFiles.push_back(finalPath);
-
-        partIndex++;
-    }
-
-    inputFile.close();
-}

@@ -86,5 +86,3 @@ bool ensure_sd_space(int minFreeBytes, bool log_to_serial);// 1 MB = 1024 * 1024
 
 //based on the mode the function will react
 void black_box_serial_print(int given_serial_mode);
-
-void splitFileIntoChunksIfNeeded(const String &filePath, std::vector<String> &partFiles, size_t maxPartSizeBytes, const std::set<String> &existingRemoteFiles);

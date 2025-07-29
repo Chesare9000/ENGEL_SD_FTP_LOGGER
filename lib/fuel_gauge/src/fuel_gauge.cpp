@@ -85,11 +85,9 @@ void fuel_gauge_update(int print) // 0:none , 1:necessary , 2:verbose
         if(log_enabled && print > 0) Serial.print("\n ---- BAT HIGH VOLTAGE! \n");
     }
 
-    if(fuel_gauge.lowVoltage()) //Low Bat Alert
+    if(fuel_gauge.lowVoltage() && !charging) //Low Bat Alert
     {
-        //We will not spam if we are charging
-        //maybe here blink a led or something or some buzzer
-        if(log_enabled && print > 0 && !charging) Serial.print("\n ---- LOW BAT Voltage! \n");
+        if(log_enabled && print > 0) Serial.print("\n ---- LOW BAT Voltage! \n");
     }
 
     if(fuel_gauge.chnageSOC()) //Low Bat Alert

@@ -114,6 +114,7 @@ bool button_bypassed_by_terminal = true;
 
 
 
+
 bool waiting_for_oled = false;
 
 
@@ -1430,20 +1431,134 @@ void task_can_i2c_release()
     //time_critical_tasks_running--;
 }
 
+bool can_activation_message_ack_received = false; 
+//Depending on the vehicle the can activation wil be or not needed , todo later convert this into a macro with ifdef
+bool can_activation_needed = false;
 
 void task_can(void * parameters)
 { 
     if(log_enabled) Serial.print("\n\n------Starting Task Can----\n\n");
+    //TODO later expand thi to macro
+    if(vehicle_id == mubea_heavy_cargo) can_activation_needed = true;
 
     can_initialized = can_init(can_log_mode_moderate);
+    
+
+    unsigned long can_init_timer = millis();
+    int can_init_retries = 0;
+
+    //TODO , check if this is just a bypass or in reality no acknowledge message is expected from the vehicle
+    bool can_activation_message_ack_bypassed = false;
+
+    //This musst always suceed before going to the next step
+    while(!can_initialized )
+    {
+        if(millis() > can_init_timer + 5000)
+        {
+            Serial.println("\n---Retrying Internal CAN Transceiver Initialization (HW)---\n");
+            
+            can_initialized = can_init(can_log_mode_moderate);
+            
+            if(!can_initialized)
+            {
+                can_init_retries++;
+                can_init_timer = millis();
+            }
+            else
+            {
+                can_init_retries = 0;
+                break;   
+            } 
+
+            if(can_init_retries > 4)
+            {
+                Serial.printf("CAN Transceiver Initialization (HW) failed after %d retries", can_init_retries + 1);
+
+                //TODO here upload the faiure to firebase to force the task_can disabling                 
+
+                Serial.printf("\n---Destroying Task CAN upon error");
+
+                wait(1000);
+
+                task_can_active = false;
+
+                vTaskDelete(NULL);                
+            }
+        }
+        else wait(100);
+    }
+    //If a started correctly we continue here    
+
+    // This activates the CAN bus communication if an order to enable it is needed
+    if (can_initialized && can_activation_needed)
+    {
+        can_activation_message_ack_received = can_send_activation_message(); 
+
+        if(can_activation_message_ack_received)
+        {
+            if(log_enabled) Serial.print("\nCAN Activation Message Received , proceeding ! ----\n");
+        }
+        else
+        {
+            if(log_enabled) Serial.print("\nCAN Activation Message NOT Received , proceeding to see if we get CAN info anyways ! ----\n");
+        }
+    }
+
+    unsigned long retry_timer = millis();
+    int retry_counter = 0;
       
     while(1)
     {
+        //Will retry up to 5 times every 5 seconds and then stop all retries and continue the loop to just listen 
+        if(!can_activation_message_ack_received && millis() > retry_timer + 5000 && !can_activation_message_ack_bypassed)
+        {
+            if(log_enabled) Serial.printf("\n\n------ Resending CAN Activation Message , retry nr: %d ----\n\n", retry_counter + 1 );
+            
+            can_activation_message_ack_received = can_send_activation_message(); 
+
+            if(can_activation_message_ack_received)
+            {
+                if(log_enabled) Serial.print("\n---CAN Activation Message Received , proceeding ! ----\n");
+            }
+            else
+            {
+                if(retry_counter < 5)
+                {
+                    if(log_enabled) Serial.print("\n---CAN Activation Message NOT Received , proceeding to see if we get CAN info anyways ! ----\n");
+                    retry_counter++;
+                    retry_timer = millis();
+                }
+
+                else
+                {
+                   if(log_enabled)
+                   {
+                        Serial.print("\n--- CAN Activation Message NOT Received after severall retries ----\n");
+                        Serial.print("\n--- We will not interrupt the task but will send error 103 to Database ----\n");
+
+                        //TODO here send to firebase the error codee
+
+                        //errors_detected++;
+                        //can_error_detected++;
+                        //can_eror_code = 103;
+
+                        can_activation_message_ack_bypassed = true;
+                   } 
+                }
+            }            
+        }        
+
         can_poll(can_log_mode_moderate);
         
         if(!task_can_active)
         {
             Serial.print("\n\n---task_can terminated ----\n\n");
+
+            //always init while starting the task so not needed but good practice
+            can_initialized = false;
+
+            wait(100);
+
             vTaskDelete(NULL); 
         }
         else wait(10);

@@ -26,6 +26,7 @@ bool nvs_wifi_credentials_retrieved = false;
 bool nvs_reset_esp_bootcount() //Return Confirmation for the operation and value rest
 {
     //TODO
+    return false;
 }
 
 void nvs_retrieve_all(int nvs_log_mode) //Here we will update values 
@@ -148,15 +149,105 @@ void nvs_set_lte_status(int nvs_log_mode)
 
 int set_shutdown_reason()
 {
+    return 0;
 
 }
 
 int get_shutdown_reason()
 {
-    
+    return 0;
 }
 
 
+
+
+//This will update logger_wifi_ssid and logger_wifi_pass
+void nvs_set_logger_wifi_credentials(String ssid, String pass, int nvs_log_mode)
+{
+    if(nvs_log_mode > nvs_log_mode_silent && log_enabled)
+    {
+        Serial.print("\n--- Setting logger WIFI Credentials to NVS ");
+
+        if(nvs_log_mode > nvs_log_mode_moderate)
+        {
+            Serial.printf("\n--- logger_config/wifi_ssid : %s ", ssid);
+            Serial.printf("\n--- logger_config/wifi_pass : %s ", pass);
+        }
+    } 
+
+    Serial.print("\n--- Writing logger WIFI Credentials to NVS ");
+    wait(100);
+    nvs.begin("logger_config", false);
+    wait(100);
+    
+    Serial.print("\n--- Writing logger_wifi_ssid to NVS ");
+    nvs.putString("wifi_ssid", ssid);Serial.print(" <--- Done");
+
+    Serial.print("\n--- Writing Pass to NVS ");
+    nvs.putString("wifi_pass", pass);Serial.print(" <--- Done");
+    
+    wait(100);
+    nvs.end();
+    wait(100);
+    Serial.print("\n--- NVS Closed ");
+}
+
+void nvs_get_logger_wifi_credentials(int nvs_log_mode)
+{
+   if(nvs_log_mode > nvs_log_mode_silent && log_enabled)
+   {
+        Serial.println("\n--- Getting logger_wifi_credentials from NVS");
+   } 
+
+    nvs.begin("logger_config", false);
+
+    //Stting the default as the one hardcoded on the firmware
+    String nvs_ssid = nvs.getString("wifi_ssid","");
+
+    String nvs_password = nvs.getString("wifi_pass","");
+
+    nvs.end();
+
+    if (nvs_ssid == "" || nvs_password == "")
+    {
+        //Print Regardless of Log config as is a big error
+        if(log_enabled) Serial.print("\n---ERROR : No values found for WIFI Credentials , setting default credentials !---\n");
+        nvs_set_logger_wifi_credentials(logger_wifi_ssid,logger_wifi_password,nvs_log_mode_moderate);
+    }
+    else if(nvs_ssid == logger_wifi_ssid && nvs_password == logger_wifi_password)
+    {
+        if(log_enabled && nvs_log_mode > nvs_log_mode_silent) Serial.print("\n---Default WIFI Credentials found on NVS !---\n");
+        if(log_enabled && nvs_log_mode > nvs_log_mode_moderate)
+        {
+            Serial.printf("\n--- logger_wifi_ssid : %s ---", logger_wifi_ssid.c_str());
+            Serial.printf("\n--- logger_wifi_password : %s ---", logger_wifi_password.c_str());
+            Serial.println();
+        }
+    }
+    else //If there was credentials stored and are diffeent from the default ones
+    {
+        if(log_enabled) Serial.print("\n---Setting Custom Credentials from NVS !---");
+        
+        logger_wifi_ssid = nvs_ssid;
+        logger_wifi_password = nvs_password;
+
+        if(log_enabled && nvs_log_mode > nvs_log_mode_moderate)
+        {
+            Serial.printf("\n--- logger_wifi_ssid : %s ---", logger_wifi_ssid.c_str());
+            Serial.printf("\n--- logger_wifi_password : %s ---", logger_wifi_password.c_str());
+            Serial.println();
+        }
+    }
+}
+
+
+
+
+
+
+
+
+//Boot Count (ESP Reset Info) 
 
 int nvs_get_boot_count(bool increase , int nvs_log_mode) //This will always print
 {

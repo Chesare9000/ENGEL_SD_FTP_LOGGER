@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Arduino.h>
+
 void oled_init();
 
 void oled_clear();
@@ -71,7 +73,7 @@ void oled_mqtt(int cycle_nr);
 void oled_firebase(int cycle_nr);
 
 void oled_ota(char* ssid);
-void oled_logger_wifi(char* ssid);
+void oled_logger_wifi(String ssid);
 void oled_logger_wifi_failed();
 
 void oled_template_logger_wifi_menu(int cursor_pos);
@@ -116,7 +118,8 @@ void oled_dev_info(int screen_nr);
 
 void oled_logger_uploading(int current , int total );
 void oled_logger_separating(int part);
-void oled_logger_error_wifi();
+
+void oled_logger_wifi_failed();
 
 void oled_starting_ftp_via_wifi();
 
@@ -125,3 +128,36 @@ void oled_ftp_wifi_success();
 void oled_logger_error_on_sd();
 
 void oled_logger_blak_box_killed();
+
+void oled_black_box_starting();
+
+
+void oled_ftp_wifi_sd_processing_files();
+
+void oled_sd_error();
+
+void oled_ftp_wifi_forcing_today_file();
+
+void oled_ftp_wifi_skipping_file();
+
+void oled_ftp_wifi_upload_complete();
+
+void oled_ftp_wifi_upload_failed();
+
+void oled_ftp_wifi_connecting_to_database();
+
+
+void oled_ftp_wifi_splitting_in_parts(int total_parts); 
+
+
+void oled_ftp_wifi_checking(String path);
+void oled_ftp_wifi_error(String path);
+void oled_ftp_wifi_uploading_directly(String path);
+
+void oled_connecting_wifi(String ssid, String pass);
+
+void oled_ftp_wifi_uploading_file(String path);
+
+void oled_ftp_wifi_processing_chunk(int current, int total);
+
+void oled_print_uploader_status(const String &header, const String &fileName, const String &extraInfo) ;
